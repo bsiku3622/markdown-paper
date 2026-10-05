@@ -889,7 +889,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
             onClick={() => {
               transferWindow.current = window.open(
                 `${NEW_ORIGIN}/#transfer`,
-                "paperdown-transfer",
+                "_blank",
               );
               if (!transferWindow.current)
                 flash(
