@@ -1,0 +1,13 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { PaperProvider } from '@studio-baeks/paper-ui';
+import '@studio-baeks/paper-ui/styles.css';
+import 'pretendard/dist/web/variable/pretendardvariable.css';
+import '@fontsource/noto-serif-kr/400.css';
+import '@fontsource/noto-serif-kr/600.css';
+import '@fontsource/source-serif-4/400.css';
+import '@fontsource/source-serif-4/600.css';
+import 'katex/dist/katex.min.css';
+import './style.css';
+import App from './App';
+createRoot(document.getElementById('root')!).render(<React.StrictMode><PaperProvider defaultTheme="light"><App/></PaperProvider></React.StrictMode>);

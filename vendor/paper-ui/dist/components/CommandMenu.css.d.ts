@@ -1,0 +1,10 @@
+export declare const commandRoot: string;
+export declare const commandSearch: string;
+export declare const commandList: string;
+export declare const commandGroup: string;
+export declare const commandGroupLabel: string;
+export declare const commandItem: string;
+export declare const commandIcon: string;
+export declare const commandCopy: string;
+export declare const commandShortcut: string;
+export declare const commandEmpty: string;

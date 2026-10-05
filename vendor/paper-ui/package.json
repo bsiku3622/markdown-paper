@@ -1,0 +1,41 @@
+{
+  "name": "@studio-baeks/paper-ui",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "paper-ui — a ledger for the screen. Paper, ink, and ruled lines.",
+  "license": "MIT",
+  "author": "Jaewon Baek",
+  "homepage": "https://github.com/bsiku3622/paper-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bsiku3622/paper-ui.git",
+    "directory": "workspace/packages/paper-ui"
+  },
+  "bugs": "https://github.com/bsiku3622/paper-ui/issues",
+  "keywords": ["react", "design-system", "components", "ui", "vanilla-extract", "typescript"],
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" },
+    "./styles.css": "./dist/paper-ui.css"
+  },
+  "sideEffects": ["**/*.css", "**/*.css.ts"],
+  "files": ["dist"],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --declaration --emitDeclarationOnly --outDir dist --noEmit false",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run"
+  },
+  "dependencies": { "@vanilla-extract/css": "^1.16.0" },
+  "peerDependencies": { "react": ">=18", "react-dom": ">=18" },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vanilla-extract/vite-plugin": "^5.2.2",
+    "jsdom": "^29.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.4.2",
+    "vitest": "^3.2.4"
+  }
+}

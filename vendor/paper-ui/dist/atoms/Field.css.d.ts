@@ -1,0 +1,11 @@
+export declare const fieldWrap: string;
+export declare const fieldSurface: Record<"raised" | "sunken", string>;
+export declare const fieldInput: string;
+export declare const fieldSize: Record<"sm" | "md" | "lg", string>;
+export declare const fieldFontSize: Record<"display" | "title" | "heading" | "subheading" | "body" | "caption" | "label", string>;
+export declare const fieldStatus: Record<"info" | "success" | "warning" | "error", string>;
+export declare const fieldAdornment: string;
+export declare const fieldAction: string;
+export declare const fieldNumeric: string;
+export declare const fieldAlign: Record<"center" | "end" | "start", string>;
+export declare const fieldPill: string;
