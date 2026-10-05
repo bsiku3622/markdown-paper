@@ -1,3 +1,10 @@
+## 2026-10-06 — Fix field padding and unify page controls
+
+- Files: `src/style.css`, `src/App.tsx`.
+- Summary: Give the font-size field explicit symmetric internal padding and match page options and zoom typography, height, hover appearance, and chevron icons.
+
+The size input now flexes within its fixed outer width, with a non-shrinking unit label and reserved right padding; browser measurement confirms an 8px gap including the border after the unit. Replacing the native zoom arrow with the same ChevronDown icon avoids platform-specific differences while retaining the accessible native select. The 1280px toolbar stays on one 51px row, 11.25pt remains visible, and the production build passes.
+
 ## 2026-10-06 — Align page controls and show fractional sizes
 
 - Files: `src/style.css`.
