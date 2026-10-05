@@ -1,3 +1,10 @@
+## 2026-10-05 — Use document units and inline formatting controls
+
+- Files: `src/App.tsx`, `src/style.css`, `README.md`.
+- Summary: Move preview formatting into the top toolbar, accept 6–96pt font sizes including 9pt/10pt, and separate screen zoom from physical document dimensions.
+
+The old implementation restricted font sizes to 15–21px and scaled the complete document into PDF margins, reducing the effective printed font size. Standard paper now uses physical millimetres at 96 CSS pixels per inch, 20mm internal margins, and a separate unzoomed export document. Preview starts at 125%; 75–200% and fit-to-width are available. Existing pixel settings migrate to points without discarding drafts. 9pt rendered as 12 CSS pixels, and rasterized A4 10pt PDFs from 125% and 200% preview zoom matched byte-for-byte. Capture uses static positioning because cloned logical insets otherwise kept the offscreen export document outside the SVG. Page slicing rounds upward to avoid a blank final page caused by fractional pixel paper dimensions.
+
 ## 2026-10-05 — Deploy and add paper sizes
 
 - Files: `src/App.tsx`, `src/style.css`, `README.md`; GitHub, Vercel, and Cloudflare DNS.
