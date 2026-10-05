@@ -5,6 +5,7 @@ import {
   dimensions,
   statistics,
   DEFAULTS,
+  isCurrentSnapshot,
 } from "../src/document.ts";
 test("migrates an existing Markdown draft and pixel typography without losing text", () => {
   const d = normalize({
@@ -80,4 +81,14 @@ test("bounds imported document sizes and falls back from invalid settings", () =
   assert.equal(d.settings.sizePt, 6);
   assert.equal(d.settings.zoom, 200);
   assert.equal(d.settings.font, "myeongjo");
+});
+
+test("an older tab cannot overwrite a newer saved document", () => {
+  assert.equal(
+    isCurrentSnapshot({ updatedAt: 200 }, { updatedAt: 100 }),
+    false,
+  );
+  assert.equal(isCurrentSnapshot({ updatedAt: 200 }, { updatedAt: 200 }), true);
+  assert.equal(isCurrentSnapshot({ updatedAt: 200 }, { updatedAt: 300 }), true);
+  assert.equal(isCurrentSnapshot(undefined, { updatedAt: 100 }), true);
 });
