@@ -1,33 +1,43 @@
-# Yeobaek
+# Paperdown
 
-A quiet Markdown editor built with Paper UI. [Open the editor](https://markdown.bsiku.dev). Write in Pretendard, then read your work in Noto Serif KR (Source Han Serif), Source Serif 4, or Pretendard.
+A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Separate editing and preview modes keep writing and typesetting focused. The top toolbar provides typeface, 6–96pt font sizes (including fractional sizes), line spacing, A4/A5/Letter/free-width paper, and preview zoom. Standard paper defaults to 125% display zoom; fit-to-width is also available. Exports use a separate document at physical paper dimensions, so preview zoom and viewport width never change the PDF font size. Document margins are 20mm. PDF export uses the selected paper size; free-width documents use A4 PDFs. Export the current layout as a clipboard image, a PNG, or an A4 PDF, and save the original Markdown whenever you need it.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard, Noto Serif KR (Source Han Serif), and Source Serif 4. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document.
 
-Documents are stored in this browser's local storage. There is no account, backend, or cloud document storage. External image URLs are requested directly from their hosts; those hosts must allow CORS for image export. Exported PDFs preserve appearance as images rather than selectable text.
+## Pages and exports
+
+Choose A4, A5, Letter, or custom dimensions, portrait or landscape, margins, and screen zoom. Continuous documents fit their content and vertical margins exactly. Paginated documents use the selected page height and visual page spacers that never become document content. Font sizes use points, including 9pt and 10pt; display zoom does not change exported dimensions.
+
+Copy the document as an image or download PNG and PDF. Continuous PDFs use one page fitted to the content; paginated PDFs preserve page dimensions and exclude the screen gaps between sheets. PDFs currently preserve appearance as raster images rather than selectable text. Very long exports reduce raster resolution to stay within browser canvas limits; export height is limited to 28,000 CSS pixels, with continuous PDF pages limited to 5 metres. Large indivisible blocks such as tables should be split manually when they exceed one page.
+
+Download a `.paperdown.json` file to preserve all rich formatting and embedded images, or `.md` for portable Markdown. Markdown does not preserve all font, alignment, or highlight attributes. Opening another document or starting a new one first downloads a backup of the current document.
+
+## Storage and migration
+
+Documents and images are saved in this browser's IndexedDB, with a local storage fallback. There is no account, backend, or cloud document storage. Clearing browser site data removes drafts, so keep document file backups. Imported image files are embedded locally. Remote image hosts must allow CORS for image exports.
+
+The former address, `markdown.bsiku.dev`, remains available to recover existing local drafts. Its migration button opens Paperdown and transfers the current document directly between the browser windows using origin- and source-checked messages. Documents are never uploaded to a server during migration. The legacy address intentionally does not redirect before users can recover their browser storage.
 
 ## Development
 
-Install dependencies and start the local editor:
+Use Node.js 22.18+ (the test command uses native TypeScript support).
 
 ```sh
 npm ci
 npm run dev
-```
-
-Create a production build with TypeScript validation:
-
-```sh
+npm test
 npm run build
 ```
 
-Vercel uses the Vite preset, `npm run build`, and the `dist` output directory. The Paper UI distribution is vendored so deployments are independent of local filesystem paths.
+Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
 
 ## Shortcuts
 
-- Command/Ctrl + S: download the original Markdown.
-- Command/Ctrl + Shift + P: switch between editing and preview.
-- Escape: close menus or the new-document dialog.
+- Command/Ctrl + S: download the complete Paperdown document.
+- Command/Ctrl + B / I: bold / italic.
+- Command/Ctrl + Z: undo; Shift + Command/Ctrl + Z: redo.
+- `/`: insert a block; arrow keys and Enter navigate the command menu.
+- Escape: close menus and dialogs.
 
 ## License
 
