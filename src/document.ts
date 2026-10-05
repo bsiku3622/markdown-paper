@@ -69,7 +69,7 @@ export function normalize(value: unknown): DocumentData {
       margin: bounded(s.margin, 5, 50, 20),
       sizePt: bounded(s.sizePt ?? (s.size ? s.size * 0.75 : 10), 6, 96, 10),
       leading: bounded(s.leading, 1, 3, 1.6),
-      zoom: s.zoom === "fit" ? "fit" : bounded(s.zoom, 50, 200, 100),
+      zoom: s.zoom === "fit" ? "fit" : bounded(s.zoom, 50, 200, 125),
       landscape: !!s.landscape,
     },
     updatedAt: typeof d.updatedAt === "number" ? d.updatedAt : Date.now(),
@@ -135,17 +135,36 @@ export async function loadDocument() {
     return legacyDraft();
   }
 }
+export function isCurrentSnapshot(
+  current: Pick<DocumentData, "updatedAt"> | undefined,
+  incoming: Pick<DocumentData, "updatedAt">,
+) {
+  return !current || incoming.updatedAt >= current.updatedAt;
+}
 export async function persistDocument(d: DocumentData) {
   try {
     const db = await database();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("documents", "readwrite");
-      tx.objectStore("documents").put(d, "current");
+      const store = tx.objectStore("documents");
+      const existing = store.get("current");
+      // The read and conditional write share a transaction, including across tabs.
+      existing.onsuccess = () => {
+        if (isCurrentSnapshot(existing.result, d)) store.put(d, "current");
+      };
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   } catch {
-    localStorage.setItem("paperdown-document-v1", JSON.stringify(d));
+    let previous: DocumentData | undefined;
+    try {
+      const raw = localStorage.getItem("paperdown-document-v1");
+      previous = raw ? JSON.parse(raw) : undefined;
+    } catch {
+      /* Replace only a malformed fallback snapshot. */
+    }
+    if (isCurrentSnapshot(previous, d))
+      localStorage.setItem("paperdown-document-v1", JSON.stringify(d));
   }
 }
 export function saveFile(blob: Blob, name: string) {
