@@ -61,8 +61,21 @@ select {
 }
 select {
   height: 30px;
-  padding: 0 6px 0 8px;
-  appearance: auto;
+  padding: 0 25px 0 8px;
+  appearance: none;
+}
+.select-control {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.select-control > svg {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink);
+  pointer-events: none;
 }
 hr {
   border: 0;
@@ -218,7 +231,7 @@ hr {
   color: var(--ink) !important;
 }
 .block-select {
-  width: 76px;
+  width: 80px;
 }
 .font-select {
   width: 110px;

@@ -1,3 +1,10 @@
+## 2026-10-06 — Control dropdown arrow spacing explicitly
+
+- Files: `src/App.tsx`, `src/style.css`.
+- Summary: Replace browser-drawn select arrows with shared decorative chevrons and reserve independent text/arrow padding for formatting and page option dropdowns.
+
+The affected font dropdown is a plain HTML select styled by Paperdown, not the Paper UI Select component. Paper UI's bundled stylesheet has no unscoped select rule; its own Select class already disables native appearance. Paperdown's appearance:auto and 6px right padding left arrow placement to the browser. The shared wrapper keeps native keyboard/select behavior while positioning a pointer-transparent arrow 7px from the edge with 25px reserved right padding. Browser checks confirm all formatting selects use those values and the 1280px toolbar remains one 51px row; page option controls also render correctly. Production build passes.
+
 ## 2026-10-06 — Fix field padding and unify page controls
 
 - Files: `src/style.css`, `src/App.tsx`.
