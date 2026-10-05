@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type SelectHTMLAttributes,
   type ReactNode,
 } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
@@ -919,7 +920,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
           </Tool>
         </div>
         <div className="tool-group">
-          <select
+          <SelectControl
             className="block-select"
             aria-label="문단 종류"
             value={block}
@@ -941,8 +942,8 @@ function Workspace({ initial }: { initial: DocumentData }) {
             <option value="h2">제목 2</option>
             <option value="h3">제목 3</option>
             <option value="code">코드 블록</option>
-          </select>
-          <select
+          </SelectControl>
+          <SelectControl
             aria-label="서체"
             className="font-select"
             value={fontValue}
@@ -951,7 +952,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
             <option value="myeongjo">본명조</option>
             <option value="sans">Pretendard</option>
             <option value="serif">Source Serif</option>
-          </select>
+          </SelectControl>
           <span className="size-field">
             <input
               key={`${sizeValue}-${editor.state.selection.empty}`}
@@ -1051,7 +1052,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
           >
             <AlignRight size={16} />
           </Tool>
-          <select
+          <SelectControl
             aria-label="줄 간격"
             className="leading-select"
             value={s.leading}
@@ -1062,7 +1063,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
                 ↕ {v}
               </option>
             ))}
-          </select>
+          </SelectControl>
         </div>
         <div className="tool-group">
           <Tool
@@ -1247,7 +1248,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
                 </p>
                 <label>
                   페이지 크기
-                  <select
+                  <SelectControl
                     aria-label="페이지 크기"
                     value={s.paper}
                     onChange={(e) =>
@@ -1258,7 +1259,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
                     <option value="a5">A5 · 148 × 210 mm</option>
                     <option value="letter">Letter · 216 × 279 mm</option>
                     <option value="custom">사용자 지정</option>
-                  </select>
+                  </SelectControl>
                 </label>
                 {s.paper === "custom" && (
                   <div className="dimension-fields">
@@ -1311,7 +1312,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
                 )}
                 <label>
                   방향
-                  <select
+                  <SelectControl
                     aria-label="페이지 방향"
                     value={s.landscape ? "landscape" : "portrait"}
                     onChange={(e) =>
@@ -1320,7 +1321,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
                   >
                     <option value="portrait">세로</option>
                     <option value="landscape">가로</option>
-                  </select>
+                  </SelectControl>
                 </label>
                 <label>
                   여백
@@ -1589,5 +1590,14 @@ function Workspace({ initial }: { initial: DocumentData }) {
         </dialog>
       )}
     </div>
+  );
+}
+
+function SelectControl(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <span className="select-control">
+      <select {...props} />
+      <ChevronDown size={12} aria-hidden="true" />
+    </span>
   );
 }
