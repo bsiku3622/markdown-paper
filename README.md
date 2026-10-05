@@ -1,8 +1,8 @@
 # Yeobaek
 
-A quiet Markdown editor built with Paper UI. Write in Pretendard, then read your work in Noto Serif KR (Source Han Serif), Source Serif 4, or Pretendard.
+A quiet Markdown editor built with Paper UI. [Open the editor](https://markdown.bsiku.dev). Write in Pretendard, then read your work in Noto Serif KR (Source Han Serif), Source Serif 4, or Pretendard.
 
-Separate editing and preview modes keep writing and typesetting focused. The preview supports font size, line spacing, and paper width. Export the current layout as a clipboard image, a PNG, or an A4 PDF, and save the original Markdown whenever you need it.
+Separate editing and preview modes keep writing and typesetting focused. The preview supports A4, A5, Letter, and free-width paper, along with font size and line spacing. PDF export uses the selected paper size; free-width documents use A4 PDFs. Export the current layout as a clipboard image, a PNG, or an A4 PDF, and save the original Markdown whenever you need it.
 
 Documents are stored in this browser's local storage. There is no account, backend, or cloud document storage. External image URLs are requested directly from their hosts; those hosts must allow CORS for image export. Exported PDFs preserve appearance as images rather than selectable text.
 
