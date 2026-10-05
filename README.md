@@ -2,7 +2,7 @@
 
 A quiet Markdown editor built with Paper UI. [Open the editor](https://markdown.bsiku.dev). Write in Pretendard, then read your work in Noto Serif KR (Source Han Serif), Source Serif 4, or Pretendard.
 
-Separate editing and preview modes keep writing and typesetting focused. The preview supports A4, A5, Letter, and free-width paper, along with font size and line spacing. PDF export uses the selected paper size; free-width documents use A4 PDFs. Export the current layout as a clipboard image, a PNG, or an A4 PDF, and save the original Markdown whenever you need it.
+Separate editing and preview modes keep writing and typesetting focused. The top toolbar provides typeface, 6–96pt font sizes (including fractional sizes), line spacing, A4/A5/Letter/free-width paper, and preview zoom. Standard paper defaults to 125% display zoom; fit-to-width is also available. Exports use a separate document at physical paper dimensions, so preview zoom and viewport width never change the PDF font size. Document margins are 20mm. PDF export uses the selected paper size; free-width documents use A4 PDFs. Export the current layout as a clipboard image, a PNG, or an A4 PDF, and save the original Markdown whenever you need it.
 
 Documents are stored in this browser's local storage. There is no account, backend, or cloud document storage. External image URLs are requested directly from their hosts; those hosts must allow CORS for image export. Exported PDFs preserve appearance as images rather than selectable text.
 
