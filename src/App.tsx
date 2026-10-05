@@ -1363,23 +1363,27 @@ function Workspace({ initial }: { initial: DocumentData }) {
               </div>
             )}
           </div>
-          <select
-            aria-label="화면 배율"
-            className="zoom-select"
-            value={s.zoom}
-            onChange={(e) =>
-              settings({
-                zoom: e.target.value === "fit" ? "fit" : Number(e.target.value),
-              })
-            }
-          >
-            <option value="fit">너비 맞춤</option>
-            {[50, 75, 100, 125, 150, 175, 200].map((v) => (
-              <option key={v} value={v}>
-                {v}%
-              </option>
-            ))}
-          </select>
+          <span className="zoom-control">
+            <select
+              aria-label="화면 배율"
+              className="zoom-select"
+              value={s.zoom}
+              onChange={(e) =>
+                settings({
+                  zoom:
+                    e.target.value === "fit" ? "fit" : Number(e.target.value),
+                })
+              }
+            >
+              <option value="fit">너비 맞춤</option>
+              {[50, 75, 100, 125, 150, 175, 200].map((v) => (
+                <option key={v} value={v}>
+                  {v}%
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={12} />
+          </span>
         </div>
       </div>
       <main className="workspace" ref={stageRef}>

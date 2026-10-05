@@ -208,7 +208,8 @@ hr {
   flex-shrink: 0;
 }
 .tool:hover,
-.page-trigger:hover {
+.page-trigger:hover,
+.zoom-select:hover {
   background: var(--pui-color-interaction-bg-hover-on-surface);
   color: var(--ink);
 }
@@ -231,14 +232,15 @@ hr {
   width: 90px;
   flex-shrink: 0;
   background: var(--white);
-  padding-right: 7px;
-  gap: 2px;
+  padding: 0 7px;
+  gap: 6px;
 }
 .size-field input {
-  width: 63px;
-  flex-shrink: 0;
+  width: 0;
+  min-width: 0;
+  flex: 1;
   border: 0;
-  padding-left: 7px;
+  padding: 0;
   font-size: 12px;
   appearance: textfield;
   outline: none;
@@ -247,26 +249,45 @@ hr {
   appearance: none;
 }
 .size-field span {
+  flex-shrink: 0;
   font-size: 10px;
   color: var(--quiet);
 }
 .leading-select {
   width: 66px;
 }
-.zoom-select {
+.zoom-control {
+  position: relative;
   width: 88px;
-  border-color: transparent;
-  color: var(--muted);
+  flex-shrink: 0;
+}
+.zoom-control > svg {
+  position: absolute;
+  right: 7px;
+  top: 9px;
+  pointer-events: none;
+}
+.page-trigger,
+.zoom-select {
+  height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
   font-size: 12px;
+  font-weight: 400;
+}
+.zoom-select {
+  width: 100%;
+  padding-right: 25px;
+  appearance: none;
+  cursor: pointer;
 }
 .page-trigger {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 7px;
-  border-radius: 4px;
-  font-size: 12px;
   white-space: nowrap;
 }
 .menu-anchor {
@@ -954,6 +975,9 @@ hr {
     flex-shrink: 0;
   }
   .tool-group select {
+    font-size: 11px;
+  }
+  .page-trigger {
     font-size: 11px;
   }
   .workspace {
