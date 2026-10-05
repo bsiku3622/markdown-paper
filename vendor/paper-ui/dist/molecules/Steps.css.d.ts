@@ -1,0 +1,10 @@
+export declare const stepsRoot: string;
+export declare const stepsOrientation: Record<"horizontal" | "vertical", string>;
+export declare const stepItem: string;
+export declare const stepItemHorizontal: string;
+export declare const stepItemVertical: string;
+export declare const stepButton: string;
+export declare const stepClickable: string;
+export declare const stepMarker: string;
+export declare const stepCopy: string;
+export declare const stepFuture: string;

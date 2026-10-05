@@ -1,0 +1,36 @@
+import { type CSSProperties, type InputHTMLAttributes, type ReactNode } from "react";
+import type { StatusName, ControlSize, TextVariant } from "../tokens";
+export type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "size" | "prefix"> & {
+    status?: "default" | StatusName;
+    size?: ControlSize;
+    surface?: "raised" | "sunken";
+    fontSize?: TextVariant;
+    shape?: "rounded" | "pill";
+    numeric?: boolean;
+    align?: "start" | "center" | "end";
+    leading?: ReactNode;
+    trailing?: ReactNode;
+    clearable?: boolean;
+    showPasswordToggle?: boolean;
+    onClear?: () => void;
+    className?: string;
+    style?: CSSProperties;
+    "data-testid"?: string;
+};
+export declare const Field: import("react").ForwardRefExoticComponent<Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "className" | "prefix"> & {
+    status?: "default" | StatusName;
+    size?: ControlSize;
+    surface?: "raised" | "sunken";
+    fontSize?: TextVariant;
+    shape?: "rounded" | "pill";
+    numeric?: boolean;
+    align?: "start" | "center" | "end";
+    leading?: ReactNode;
+    trailing?: ReactNode;
+    clearable?: boolean;
+    showPasswordToggle?: boolean;
+    onClear?: () => void;
+    className?: string;
+    style?: CSSProperties;
+    "data-testid"?: string;
+} & import("react").RefAttributes<HTMLInputElement>>;

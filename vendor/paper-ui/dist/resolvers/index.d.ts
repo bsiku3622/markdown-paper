@@ -1,0 +1,22 @@
+import type { StatusName, Space } from "../tokens";
+import { type Surface } from "./color";
+export { resolveControlTypography } from "./typography";
+export { resolveSurface, resolveAccent, SURFACES, ACCENTS, VARIANTS, INTERACTIVE, type Surface, type Accent, type Variant, } from "./color";
+declare const NEUTRAL_INKS: readonly ["base", "soft", "faint"];
+export { NEUTRAL_INKS };
+export declare const INKS: readonly ["base", "soft", "faint", "info", "success", "warning", "error", "inherit"];
+export type Ink = (typeof INKS)[number];
+export declare const resolveInk: (i: Ink | undefined) => string;
+export declare const TONES: readonly ["solid", "wash", "dot"];
+export type Tone = (typeof TONES)[number];
+export declare const resolveTone: (accent: string | undefined, tone?: Tone) => string;
+export declare const resolveStatus: (status: StatusName | undefined, tone?: Tone) => string;
+export declare const resolveSpace: (axis: "p" | "px" | "py" | "gap", size: Space | undefined) => string;
+export type BoxLike = {
+    surface?: Surface;
+    padding?: Space;
+    paddingX?: Space;
+    paddingY?: Space;
+    gap?: Space;
+};
+export declare const resolveBoxClass: (p: BoxLike) => string;

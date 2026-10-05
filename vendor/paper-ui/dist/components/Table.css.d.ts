@@ -1,0 +1,14 @@
+export declare const tableRoot: string;
+export declare const tableCaption: string;
+export declare const tableHead: string;
+export declare const tableHeadSticky: string;
+export declare const tableTh: string;
+export declare const tableTr: string;
+export declare const tableRowVariant: Record<"plain" | "ruled" | "striped", string>;
+export declare const tableRowDensity: Record<"compact" | "default" | "comfortable", string>;
+export declare const tableHeadDensity: Record<"compact" | "default" | "comfortable", string>;
+export declare const tableTd: string;
+export declare const tableCellDensity: Record<"compact" | "default" | "comfortable", string>;
+export declare const tableEmptyCell: string;
+export declare const tableAlign: Record<"center" | "end" | "start", string>;
+export declare const tableNumeric: string;
