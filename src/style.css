@@ -192,6 +192,10 @@ hr {
 .tool-group:last-child {
   border-right: 0;
 }
+.tool-group.page-group {
+  margin-left: auto;
+  padding-right: 0;
+}
 .tool {
   width: 29px;
   height: 29px;
@@ -224,13 +228,15 @@ hr {
   border: 1px solid var(--line);
   height: 30px;
   border-radius: 4px;
-  width: 70px;
+  width: 90px;
+  flex-shrink: 0;
   background: var(--white);
   padding-right: 7px;
   gap: 2px;
 }
 .size-field input {
-  width: 43px;
+  width: 63px;
+  flex-shrink: 0;
   border: 0;
   padding-left: 7px;
   font-size: 12px;

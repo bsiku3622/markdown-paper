@@ -1,3 +1,10 @@
+## 2026-10-06 — Align page controls and show fractional sizes
+
+- Files: `src/style.css`.
+- Summary: Anchor page options and zoom at the right edge of the toolbar and widen the font size field to display fractional point values completely.
+
+The previous 43px numeric input clipped the migrated 11.25pt value. A 63px input inside a non-shrinking 90px field preserves the full value while keeping the 1280px desktop toolbar on one 51px row. Auto left margin anchors the page group independently of the formatting tools, including when the toolbar wraps. The Paper UI palette and document content remain unchanged. Production build and browser layout checks pass.
+
 ## 2026-10-06 — Evolve the editor into Paperdown
 
 - Files: `src/App.tsx`, `src/document.ts`, `src/pagination.ts`, `src/export-document.ts`, `src/export-fonts.ts`, `src/style.css`, tests, package metadata, and README; Vercel and Cloudflare domain configuration.
