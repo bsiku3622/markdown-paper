@@ -43,6 +43,9 @@ input:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--pui-color-interaction-focus);
 }
+select[data-pointer-focus]:focus-visible {
+  outline: none;
+}
 button {
   border: 0;
   background: none;

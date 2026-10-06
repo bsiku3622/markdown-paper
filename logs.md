@@ -1,3 +1,10 @@
+## 2026-10-06 — Distinguish pointer and keyboard select focus
+
+- Files: `src/App.tsx`, `src/style.css`.
+- Summary: Suppress the blue select outline for pointer activation while retaining keyboard focus indication on formatting, page settings, and zoom dropdowns.
+
+Native selects can match focus-visible after pointer activation, so that selector alone does not distinguish input modality. Pointer-down marks the select before focus styling, blur clears the mark, and keyboard interaction restores the default focus-visible rule. Browser checks confirm a pointer click has no outline while Tab navigation shows a 2px solid ring. The native select and keyboard behavior remain intact. Production build passes.
+
 ## 2026-10-06 — Remove Source Serif from font choices
 
 - Files: font options, document normalization, font imports and export embedding, wordmark CSS, package metadata, README, and migration tests.

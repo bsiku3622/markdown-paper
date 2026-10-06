@@ -1367,6 +1367,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
             <select
               aria-label="화면 배율"
               className="zoom-select"
+              {...selectFocusProps}
               value={s.zoom}
               onChange={(e) =>
                 settings({
@@ -1592,10 +1593,25 @@ function Workspace({ initial }: { initial: DocumentData }) {
   );
 }
 
+const selectFocusProps: Pick<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  "onPointerDown" | "onBlur" | "onKeyDown"
+> = {
+  onPointerDown: (event) => {
+    event.currentTarget.dataset.pointerFocus = "true";
+  },
+  onBlur: (event) => {
+    delete event.currentTarget.dataset.pointerFocus;
+  },
+  onKeyDown: (event) => {
+    delete event.currentTarget.dataset.pointerFocus;
+  },
+};
+
 function SelectControl(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <span className="select-control">
-      <select {...props} />
+      <select {...props} {...selectFocusProps} />
       <ChevronDown size={12} aria-hidden="true" />
     </span>
   );
