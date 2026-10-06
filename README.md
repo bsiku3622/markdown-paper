@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard, Noto Serif KR (Source Han Serif), and Source Serif 4. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard, and Noto Serif KR (Source Han Serif). Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document.
 
 ## Pages and exports
 
@@ -41,4 +41,4 @@ Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored s
 
 ## License
 
-MIT © Jaewon Baek. Vendored Paper UI retains its MIT license. Pretendard, Noto Serif KR, and Source Serif 4 retain their respective SIL Open Font Licenses.
+MIT © Jaewon Baek. Vendored Paper UI retains its MIT license. Pretendard and Noto Serif KR retain their respective SIL Open Font Licenses.

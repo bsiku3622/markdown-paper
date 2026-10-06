@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@fontsource/noto-serif-kr": "^5.3.0",
-    "@fontsource/source-serif-4": "^5.3.0",
     "@studio-baeks/paper-ui": "file:vendor/paper-ui",
     "@tiptap/extension-highlight": "^3.31.4",
     "@tiptap/extension-image": "^3.31.4",

@@ -1,3 +1,10 @@
+## 2026-10-06 — Remove Source Serif from font choices
+
+- Files: font options, document normalization, font imports and export embedding, wordmark CSS, package metadata, README, and migration tests.
+- Summary: Keep Noto Serif KR and Pretendard only, remove the Source Serif dependency, and map legacy document settings and rich-text font marks to Noto Serif KR.
+
+Legacy font marks are normalized recursively without mutating the imported document or changing text, point sizes, or other marks. The wordmark now uses the already bundled Noto Serif KR rather than retaining a separate font dependency for branding. Build and all six document tests pass.
+
 ## 2026-10-06 — Match placeholders to document typography
 
 - Files: `src/style.css`.

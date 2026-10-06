@@ -16,8 +16,24 @@ test("migrates an existing Markdown draft and pixel typography without losing te
   assert.equal(d.markdown, "# 기존 글\n\n한글과 emoji 🧑‍💻");
   assert.equal(d.title, "내 문서");
   assert.equal(d.settings.sizePt, 11.25);
-  assert.equal(d.settings.font, "serif");
+  assert.equal(d.settings.font, "myeongjo");
   assert.deepEqual(dimensions(d.settings), { width: 148, height: 210 });
+});
+test("migrates legacy Source Serif marks without changing text or other formatting", () => {
+  const content = {
+    type: "doc",
+    content: [{ type: "paragraph", content: [{
+      type: "text", text: "기존 문장",
+      marks: [{ type: "textStyle", attrs: { fontFamily: '"Source Serif 4", "Noto Serif KR", serif', fontSize: "11.25pt" } }, { type: "bold" }],
+    }] }],
+  };
+  const d = normalize({ content, settings: { font: "serif" } });
+  const text = d.content!.content![0].content![0];
+  assert.equal(text.text, "기존 문장");
+  assert.equal(text.marks![0].attrs!.fontFamily, '"Noto Serif KR", serif');
+  assert.equal(text.marks![0].attrs!.fontSize, "11.25pt");
+  assert.equal(text.marks![1].type, "bold");
+  assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Source Serif/);
 });
 test("preserves rich document structure and custom landscape dimensions", () => {
   const content = {
