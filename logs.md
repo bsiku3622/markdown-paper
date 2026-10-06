@@ -1,3 +1,17 @@
+## 2026-10-06 — Match placeholders to document typography
+
+- Files: `src/style.css`.
+- Summary: Inherit the empty block font instead of forcing 13px sans typography on heading placeholders.
+
+The shared placeholder pseudo-element overrode the heading font family and size, making its label smaller than its caret and eventual content. Inheriting the font preserves heading levels, document typeface, size, weight, and line height while keeping the muted placeholder color. Browser verification on an empty H1 confirms both node and placeholder use 30px Noto Serif KR at weight 600. Production build passes.
+
+## 2026-10-06 — Review Paperdown patterns for Paper UI
+
+- Files: design review report in `/Users/baeks/Reports/2026-10-06_01-42-paperdown-paper-ui-design-review.md`.
+- Summary: Compare the deployed editor and local app styles against the current Paper UI working tree; recommend a document-workspace recipe before adding shared components.
+
+The existing palette is already inherited from Paper UI, while toolbar geometry and document presentation remain app-owned. Field already supports unit adornments, and Select already disables native arrows, so the recent app dropdown defect is not evidence of a reproduced library defect. The report separates reusable composition patterns from application typography, pagination, export, and persistence, and flags the uncommitted Paper UI source and conflicting documentation values as comparison limits. No implementation or deployment changes were made.
+
 ## 2026-10-06 — Control dropdown arrow spacing explicitly
 
 - Files: `src/App.tsx`, `src/style.css`.

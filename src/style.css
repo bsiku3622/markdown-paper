@@ -717,8 +717,7 @@ hr {
   height: 0;
   pointer-events: none;
   color: var(--quiet);
-  font-family: var(--sans);
-  font-size: 13px;
+  font: inherit;
 }
 .document-content ::selection {
   background: var(--pui-color-accent-info-soft);
