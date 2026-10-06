@@ -1,3 +1,10 @@
+## 2026-10-06 — Enlarge the point unit label
+
+- Files: `src/style.css`.
+- Summary: Increase the font-size field's pt label from 10px to 12px, matching the numeric value while retaining the muted unit color.
+
+The unit remains non-shrinking inside the existing 90px field. Browser checks confirm 11.25 is visible in a roughly 57px input and the unit retains its 8px right gap including the border. Production build passes.
+
 ## 2026-10-06 — Distinguish pointer and keyboard select focus
 
 - Files: `src/App.tsx`, `src/style.css`.
