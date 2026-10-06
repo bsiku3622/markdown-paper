@@ -6,7 +6,7 @@ export type Settings = {
   landscape: boolean;
   mode: "continuous" | "pages";
   margin: number;
-  font: "sans" | "serif" | "myeongjo";
+  font: "sans" | "myeongjo";
   sizePt: number;
   leading: number;
   zoom: number | "fit";
@@ -33,7 +33,6 @@ export const DEFAULTS: Settings = {
 };
 export const FONTS = {
   sans: '"Pretendard Variable", sans-serif',
-  serif: '"Source Serif 4", "Noto Serif KR", serif',
   myeongjo: '"Noto Serif KR", serif',
 };
 export const SAMPLE = `# 생각을 담는 한 장\n\n문장을 쓰는 동안, 문서는 이미 완성된 모습입니다. **Paperdown**은 글의 흐름과 종이의 형태를 함께 다루는 공간입니다.\n\n## 글에 집중하세요\n\n이 문장을 클릭하고 바로 써보세요. 텍스트를 선택하면 위 도구 모음에서 **굵게**, *기울임*, 서체와 크기를 바꿀 수 있습니다. Markdown 문법으로 제목과 목록을 만들 수도 있습니다.\n\n> 잘 정돈된 종이는 다음 생각을 기다립니다.\n\n## 원하는 모습으로 남기세요\n\n- 본명조와 Pretendard, 글에 어울리는 서체\n- A4부터 자유 크기까지, 페이지 옵션\n- 이미지 복사와 PNG · PDF 다운로드\n\n문서 파일에는 서식과 이미지까지 함께 저장됩니다.\n\n---\n\n첫 문장부터, 마지막 한 장까지.\n`;
@@ -53,7 +52,7 @@ export function normalize(value: unknown): DocumentData {
         : typeof d.text === "string"
           ? d.text
           : SAMPLE,
-    content: d.content?.type === "doc" ? d.content : undefined,
+    content: d.content?.type === "doc" ? normalizeFonts(d.content) : undefined,
     settings: {
       ...DEFAULTS,
       ...s,
@@ -61,7 +60,7 @@ export function normalize(value: unknown): DocumentData {
         ? s.paper!
         : "a4",
       mode: s.mode === "pages" ? "pages" : "continuous",
-      font: ["sans", "serif", "myeongjo"].includes(s.font || "")
+      font: ["sans", "myeongjo"].includes(s.font || "")
         ? s.font!
         : "myeongjo",
       width: bounded(s.width, 80, 500, 210),
@@ -73,6 +72,21 @@ export function normalize(value: unknown): DocumentData {
       landscape: !!s.landscape,
     },
     updatedAt: typeof d.updatedAt === "number" ? d.updatedAt : Date.now(),
+  };
+}
+function normalizeFonts(node: JSONContent): JSONContent {
+  return {
+    ...node,
+    ...(node.marks && {
+      marks: node.marks.map((mark) =>
+        mark.type === "textStyle" &&
+        typeof mark.attrs?.fontFamily === "string" &&
+        mark.attrs.fontFamily.includes("Source Serif 4")
+          ? { ...mark, attrs: { ...mark.attrs, fontFamily: FONTS.myeongjo } }
+          : mark,
+      ),
+    }),
+    ...(node.content && { content: node.content.map(normalizeFonts) }),
   };
 }
 export function legacyDraft() {

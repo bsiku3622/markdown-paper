@@ -53,7 +53,6 @@ export async function documentFonts(node: HTMLElement) {
     .join(",");
   const families = [
     "Pretendard Variable",
-    "Source Serif 4",
     "Noto Serif KR",
   ].filter((name) => family.includes(name));
   if (node.querySelector(".katex")) families.push("KaTeX");

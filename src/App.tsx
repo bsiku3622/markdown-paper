@@ -951,7 +951,6 @@ function Workspace({ initial }: { initial: DocumentData }) {
           >
             <option value="myeongjo">본명조</option>
             <option value="sans">Pretendard</option>
-            <option value="serif">Source Serif</option>
           </SelectControl>
           <span className="size-field">
             <input
