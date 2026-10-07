@@ -1,3 +1,10 @@
+## 2026-10-07 — Strike completed task text
+
+- Files: `src/style.css`.
+- Summary: Apply line-through to paragraphs in checked task items, and remove it automatically when unchecked.
+
+The selector follows Tiptap's checked state and targets only direct paragraphs. Striking the entire content wrapper would also strike nested unfinished tasks. Export clones retain the task attributes and document-content class, so image/PDF output uses the same styling. Production build passes.
+
 ## 2026-10-06 — Enlarge the point unit label
 
 - Files: `src/style.css`.

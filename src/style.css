@@ -616,6 +616,10 @@ hr {
   flex: 1;
   min-width: 0;
 }
+/* Strike only this item's paragraphs so nested unchecked tasks stay readable. */
+.document-content li[data-type="taskItem"][data-checked="true"] > div > p {
+  text-decoration-line: line-through;
+}
 .document-content input[type="checkbox"] {
   accent-color: var(--ink);
   width: 13px;
