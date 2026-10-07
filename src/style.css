@@ -617,7 +617,7 @@ hr {
   min-width: 0;
 }
 /* Strike only this item's paragraphs so nested unchecked tasks stay readable. */
-.document-content li[data-type="taskItem"][data-checked="true"] > div > p {
+.document-content ul[data-type="taskList"] > li[data-checked="true"] > div > p {
   text-decoration-line: line-through;
 }
 .document-content input[type="checkbox"] {
