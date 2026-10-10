@@ -1,3 +1,16 @@
+## 2026-10-11 — Add the document library and stable document URLs
+
+- Files: `src/Home.tsx`, routes, account/editor navigation, responsive styles, route tests, Vercel rewrites, and README.
+- Summary: Make `/` a Paper UI document library and open private account documents at `/documents/<id>`.
+
+Reuse the existing note IDs and owner checks; a document URL does not make a note public. Avoid a new routing dependency for the home/document-only route set. Browser history drives account document selection, direct links resume after authentication, and Vercel serves the SPA entry for document paths. Invalid paths and inaccessible notes show explicit recovery actions. Login no longer opens an arbitrary recent note or creates a document automatically.
+
+Flush the latest snapshot before navigation and reuse that snapshot when remounting the same editor. The previous `active.document` was only updated when selecting a note; reopening it after a home visit could restore an older snapshot. Route loads carry a generation guard so slower requests cannot replace a newer navigation. Do not fall back to cached note content after permission/not-found responses. Session reauthentication triggers a fresh route load even when the account ID stays the same.
+
+The browser-local document uses `/documents/local` and its original storage. Switching to it clears the active cloud-note reference after saving; otherwise a local edit could be sent to the previously selected account note. The home page keeps a local-document entry available after login. Search, recent/name sorting, new-document creation, and deletion reuse account actions. Guest mode retains the existing single local document rather than creating an unrelated local multi-file store.
+
+Fourteen document/API/CLI/routing tests and the production build passed. Computer Use verified local account login, note creation and URL changes, search, home/editor round trips with immediate title/body changes, direct-link reload, browser Back, login-required links, login return to the requested document, and cloud/local separation. Desktop and mobile library layouts were visually reviewed using an isolated local API fixture; no production accounts or notes were changed during verification.
+
 ## 2026-10-11 — Try KoPub Batang as the Myeongjo default
 
 - Files: bundled KoPub webfonts, document font migration, export embedding, browser/CLI imports, tests, and documentation.

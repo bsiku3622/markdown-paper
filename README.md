@@ -42,6 +42,12 @@ Production runs `paperdown-api.service` on the SSH server, bound to loopback por
 
 Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
 
+## Document navigation
+
+The home page at `/` lists account documents with search and sorting. Each private account document opens at `/documents/<note-id>`; direct links, refresh, new tabs, and browser history restore that document after authentication. URLs do not grant access to other accounts. Vercel rewrites document paths to the SPA entry point.
+
+The existing browser-local document opens at `/documents/local`, remains separate from account notes, and is reachable from the home page. Navigating away flushes the latest snapshot before switching documents. Existing account autosave, draft recovery, and revision conflict protection remain in use.
+
 ## PDF CLI
 
 Install the local command with `npm run install:cli`, then run `paperdown-pdf notes.md -o notes.pdf`. Markdown defaults to A4 pages, KoPub Batang for both Latin and Korean text, 10pt text, and 20mm margins. Portable Paperdown JSON retains its saved settings. The command includes the same renderer and bundled fonts as the editor and requires Node.js 22.18+ and installed Google Chrome.
