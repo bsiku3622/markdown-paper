@@ -54,6 +54,8 @@ export async function documentFonts(node: HTMLElement) {
   const families = [
     "Pretendard Variable",
     "Noto Serif KR",
+    "Latin Modern Roman",
+    "Nanum Myeongjo",
   ].filter((name) => family.includes(name));
   if (node.querySelector(".katex")) families.push("KaTeX");
   const rules: { rule: CSSFontFaceRule; base: string }[] = [];
@@ -94,7 +96,7 @@ export async function documentFonts(node: HTMLElement) {
         const url = new URL(selected[1], base).href;
         return rule.cssText.replace(
           source,
-          `url("${await dataUrl(url)}") format("woff2")`,
+          `url("${await dataUrl(url)}") format("${selected[2]}")`,
         );
       }),
     )

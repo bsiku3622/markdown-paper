@@ -31,7 +31,7 @@ async function main() {
   if(o.values.title) document.title=o.values.title;
   if(document.settings.margin && document.settings.paper==='custom' && (document.settings.width<=2*document.settings.margin || document.settings.height<=2*document.settings.margin)) throw new Error('Margins must leave room for page content.');
   const token=randomBytes(16).toString('hex');
-  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf'};
+  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.otf':'font/otf'};
   const server=createServer(async(req,res)=> {
     try {
       const path=new URL(req.url,'http://localhost').pathname;

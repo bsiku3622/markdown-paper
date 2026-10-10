@@ -36,7 +36,7 @@ test("migrates legacy Source Serif marks without changing text or other formatti
   assert.equal(text.marks![1].type, "bold");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Source Serif/);
 });
-test("preserves mixed Times and Noto typography across document loading", () => {
+test("migrates legacy serif marks to Latin Modern and Nanum typography", () => {
   const content = {type: "doc", content: [{type: "paragraph", content: [{
     type: "text", text: "Closed System인 이유",
     marks: [{type: "textStyle", attrs: {fontFamily: '"Times New Roman", Times, "Noto Serif KR", serif', fontSize: "10pt"}}, {type: "italic"}],

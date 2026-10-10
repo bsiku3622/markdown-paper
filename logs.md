@@ -1,3 +1,12 @@
+## 2026-10-11 — Match Myeongjo to the LaTeX font families
+
+- Files: document font settings, browser/CLI font imports, export font embedding, bundled Latin Modern assets, and documentation.
+- Summary: Replace Times/Noto Myeongjo with Latin Modern Roman and Nanum Myeongjo in Paperdown and the installed PDF CLI.
+
+The personal LaTeX format allows Computer Modern/Latin Modern with the serif Korean font supplied by kotex. The installed pdfLaTeX kotexutf declares `nanummj`, so Korean uses Nanum Myeongjo rather than assuming Noto Serif KR is the default. Bundle Latin Modern Roman regular, bold, italic, and bold italic OpenType fonts and Nanum Myeongjo regular/bold webfonts. Keep Noto as a fallback for missing glyphs. Existing Times, Source Serif, and Noto rich-text marks migrate to the new stack without changing text, sizes, or other formatting.
+
+Font embedding must preserve each source format: hardcoding `woff2` for the new OpenType data URLs would prevent matching PDF typography. Third-party license, author, and manifest files accompany the bundled Latin Modern faces and the installed CLI. Twelve tests, TypeScript/renderer builds, and the skill validator passed; both pages of a PDF with Korean/Latin, bold/italic, table, image, tasks, and math were visually checked. Page size and margins stay at the existing Paperdown defaults because this request changes typography only.
+
 ## 2026-10-11 — Add an installed Paperdown PDF CLI
 
 - Files: `cli/`, `src/cli-render.tsx`, shared document/export styles, tests, and README.
