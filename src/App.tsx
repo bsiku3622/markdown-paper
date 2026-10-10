@@ -792,7 +792,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   return (
     <div className="app" style={style}>
       <header className="app-header">
-        <a className="brand" href="/" aria-label="Paperdown 홈">
+        <a className="brand" href="/" aria-label="Paperdown 홈" onClick={e=>{if(!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){e.preventDefault();account.home();}}}>
           <span className="brand-symbol">
             <FileText size={21} strokeWidth={1.5} />
           </span>
