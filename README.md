@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text and Noto Serif KR (Source Han Serif) for both Korean and Latin text in Myeongjo mode. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text, and Times New Roman for Latin text with Noto Serif KR (Source Han Serif) for Korean in Myeongjo mode. Times New Roman uses the installed system font with Times/Noto fallbacks. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
 
 ## Pages and exports
 
@@ -41,6 +41,12 @@ VITE_API_URL=http://localhost:8792 npm run dev
 Production runs `paperdown-api.service` on the SSH server, bound to loopback port 8792 and exposed through the existing Cloudflare Tunnel at `paperdown-api.bsiku.dev`. The environment file is `/etc/paperdown-api.env`; account data lives in `/var/lib/paperdown`. Passwords use salted scrypt hashes, sessions use hashed tokens and Secure/HttpOnly cookies, and mutation requests require the exact configured frontend origin. The daily `paperdown-backup.timer` snapshots SQLite and private files into `/var/backups/paperdown`. Backups currently remain on the same server and have no automatic retention policy. Unit and backup templates are in `deploy/`.
 
 Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
+
+## PDF CLI
+
+Install the local command with `npm run install:cli`, then run `paperdown-pdf notes.md -o notes.pdf`. Markdown defaults to A4 pages, Latin Times New Roman with Korean Noto Serif KR, 10pt text, and 20mm margins. Portable Paperdown JSON retains its saved settings. The command includes the same renderer and bundled fonts as the editor and requires Node.js 22.18+ and installed Google Chrome.
+
+See [CLI usage and options](cli/README.md) for custom paper sizes, continuous height, local images, and stdin/stdout. PDFs use the web editor's raster export; text is not selectable or searchable.
 
 ## Shortcuts
 

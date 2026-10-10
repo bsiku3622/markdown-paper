@@ -5,7 +5,7 @@ import { dimensions, FONTS, saveFile, type Settings } from "./document";
 export async function capture(editor: HTMLElement, s: Settings, pages: number) {
   await document.fonts.ready;
   await Promise.all(
-    Array.from(editor.querySelectorAll("img")).map(async (img) => {
+    Array.from(editor.querySelectorAll<HTMLImageElement>("img:not(.ProseMirror-separator)")).map(async (img) => {
       try {
         await img.decode();
       } catch {
@@ -15,9 +15,10 @@ export async function capture(editor: HTMLElement, s: Settings, pages: number) {
   );
   const box = document.createElement("div");
   const node = editor.cloneNode(true) as HTMLElement;
-  await Promise.all(Array.from(node.querySelectorAll("img")).map(async img => {
+  await Promise.all(Array.from(node.querySelectorAll<HTMLImageElement>("img:not(.ProseMirror-separator)")).map(async img => {
     if (isPrivateImage(img.src)) { img.src = await privateImageData(img.src); img.crossOrigin = "anonymous"; await img.decode(); }
   }));
+  node.querySelectorAll(".ProseMirror-separator").forEach(el => el.remove());
   const { width, height } = dimensions(s);
   const px = 96 / 25.4;
   const palette = getComputedStyle(document.documentElement);
@@ -82,6 +83,7 @@ export async function pdf(
   s: Settings,
   pages: number,
   name: string,
+  download = true,
 ) {
   const { node, dispose, pageCount } = await capture(editor, s, pages);
   try {
@@ -146,6 +148,7 @@ export async function pdf(
         doc.addImage(part, "PNG", 0, 0, width, height, undefined, "FAST");
       }
     }
+    if (!download) return doc.output("arraybuffer");
     doc.save(`${name}.pdf`);
   } finally {
     dispose();

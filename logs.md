@@ -1,3 +1,14 @@
+## 2026-10-11 — Add an installed Paperdown PDF CLI
+
+- Files: `cli/`, `src/cli-render.tsx`, shared document/export styles, tests, and README.
+- Summary: Add a self-contained global `paperdown-pdf` command for Markdown and portable Paperdown JSON; restore Latin Times New Roman with Korean Noto Serif KR as the Myeongjo default.
+
+The CLI bundles the web editor's actual Tiptap, pagination, font, and raster PDF renderer rather than recreating its typography with another PDF engine. Markdown defaults to A4 pages, 10pt, 20mm margins, and 1.6 line height; document JSON keeps its saved settings unless options override them. The package installs as a snapshot in npm's global prefix, so moving the checkout does not break the command. Chrome runs headlessly in an isolated temporary profile. Local assets are constrained to the selected asset directory; public remote images require an explicit option, and private account images must be embedded in document JSON first.
+
+ProseMirror adds an empty separator image after image content. Treating it as a real image caused decode failures; applying document-image margins to it also shifted page boundaries. Exclude it from image styling and loading, remove it from export clones, and keep its CLI layout footprint zero before pagination measures the document.
+
+Twelve document/API/CLI tests passed, TypeScript and renderer builds passed, and the installed command produced verified A4 pagination, content-fitted Gothic output, custom landscape PDF bytes via stdin/stdout, and an A5 JSON document with an embedded image. Both A4 pages were visually inspected for margins, font coverage, task strikethrough, table, math, and image layout. The PDF remains rasterized like the web export: text is not selectable/searchable, with a 28,000 CSS-pixel content limit. Installation and the personal `paperdown-pdf` skill are recorded in the system log.
+
 ## 2026-10-10 — Unify Myeongjo and add symbol input rules
 
 - Files: `src/typography.ts`, `src/App.tsx`, `src/document.ts`, document tests, and README.
