@@ -1,3 +1,12 @@
+## 2026-10-10 — Unify Myeongjo and add symbol input rules
+
+- Files: `src/typography.ts`, `src/App.tsx`, `src/document.ts`, document tests, and README.
+- Summary: Use Noto Serif KR for both Latin and Korean Myeongjo text; convert typed arrows and double hyphens into typographic symbols.
+
+Input rules replace `->` and `-->` with `→`, `=>` and `==>` with `⇒`, and `--` with `—`. Since two hyphens convert before the final greater-than character arrives, `—>` also resolves to an arrow. Tiptap's existing `—-` horizontal-rule shortcut keeps triple-hyphen separators working. Code blocks and inline code bypass input rules, and immediate Backspace reverses the substitution. Pasted/imported text stays literal; existing document content is not rewritten for symbols.
+
+Existing mixed Times New Roman/Noto rich-text marks normalize to Noto Serif KR while preserving text and other marks. Browser checks verified all five sequences, Backspace reversal, the triple-hyphen separator, and literal code-block text. Document/API tests and production build passed.
+
 ## 2026-10-10 — Add private accounts and synchronized notes
 
 - Files: account UI and API client, document/export integration, `backend/`, `deploy/`, README, and tests.

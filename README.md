@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text, and Times New Roman for Latin text with Noto Serif KR (Source Han Serif) for Korean in Myeongjo mode. Times New Roman uses the installed system font; where unavailable, the browser falls back to Times or Noto Serif KR. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text and Noto Serif KR (Source Han Serif) for both Korean and Latin text in Myeongjo mode. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
 
 ## Pages and exports
 

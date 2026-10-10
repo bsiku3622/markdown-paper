@@ -63,6 +63,7 @@ import {
 import { mergeAttributes } from "@tiptap/core";
 import { portableDocument, isPrivateImage } from "./portable-document";
 import { Account, type AccountControls } from "./Account";
+import { PaperTypography } from "./typography";
 import { pagination, type PageLayout } from "./pagination";
 import { image, pdf } from "./export-document";
 
@@ -186,6 +187,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
         },
       }),
       Markdown,
+      PaperTypography,
       TableKit.configure({ table: { resizable: true } }),
       TaskList,
       TaskItem.configure({ nested: true }),
