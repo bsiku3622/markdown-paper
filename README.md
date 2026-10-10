@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text, and Times New Roman for Latin text with Noto Serif KR (Source Han Serif) for Korean in Myeongjo mode. Times New Roman uses the installed system font with Times/Noto fallbacks. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text, and Latin Modern Roman for Latin text with Nanum Myeongjo for Korean in Myeongjo mode, matching the default LaTeX font families. Fonts are bundled, with Noto Serif KR providing fallback glyphs. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
 
 ## Pages and exports
 
@@ -44,7 +44,7 @@ Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored s
 
 ## PDF CLI
 
-Install the local command with `npm run install:cli`, then run `paperdown-pdf notes.md -o notes.pdf`. Markdown defaults to A4 pages, Latin Times New Roman with Korean Noto Serif KR, 10pt text, and 20mm margins. Portable Paperdown JSON retains its saved settings. The command includes the same renderer and bundled fonts as the editor and requires Node.js 22.18+ and installed Google Chrome.
+Install the local command with `npm run install:cli`, then run `paperdown-pdf notes.md -o notes.pdf`. Markdown defaults to A4 pages, Latin Modern Roman with Korean Nanum Myeongjo, 10pt text, and 20mm margins. Portable Paperdown JSON retains its saved settings. The command includes the same renderer and bundled fonts as the editor and requires Node.js 22.18+ and installed Google Chrome.
 
 See [CLI usage and options](cli/README.md) for custom paper sizes, continuous height, local images, and stdin/stdout. PDFs use the web editor's raster export; text is not selectable or searchable.
 
@@ -58,4 +58,4 @@ See [CLI usage and options](cli/README.md) for custom paper sizes, continuous he
 
 ## License
 
-MIT © Jaewon Baek. Vendored Paper UI retains its MIT license. Pretendard and Noto Serif KR retain their respective SIL Open Font Licenses.
+MIT © Jaewon Baek. Vendored Paper UI retains its MIT license. Pretendard, Nanum Myeongjo, and Noto Serif KR retain their respective SIL Open Font Licenses. Latin Modern retains the GUST Font License.
