@@ -1,0 +1,22 @@
+[Unit]
+Description=Paperdown account and document API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=paperdown
+Group=paperdown
+WorkingDirectory=/opt/paperdown
+EnvironmentFile=/etc/paperdown-api.env
+ExecStart=/usr/bin/node /opt/paperdown/backend/server.mjs
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/paperdown
+
+[Install]
+WantedBy=multi-user.target

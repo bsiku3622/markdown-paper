@@ -1,4 +1,5 @@
 import { toCanvas, toBlob } from "html-to-image";
+import { isPrivateImage, privateImageData } from "./portable-document";
 import { documentFonts } from "./export-fonts";
 import { dimensions, FONTS, saveFile, type Settings } from "./document";
 export async function capture(editor: HTMLElement, s: Settings, pages: number) {
@@ -14,6 +15,9 @@ export async function capture(editor: HTMLElement, s: Settings, pages: number) {
   );
   const box = document.createElement("div");
   const node = editor.cloneNode(true) as HTMLElement;
+  await Promise.all(Array.from(node.querySelectorAll("img")).map(async img => {
+    if (isPrivateImage(img.src)) { img.src = await privateImageData(img.src); img.crossOrigin = "anonymous"; await img.decode(); }
+  }));
   const { width, height } = dimensions(s);
   const px = 96 / 25.4;
   const palette = getComputedStyle(document.documentElement);
