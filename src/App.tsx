@@ -54,13 +54,15 @@ import {
   FONTS,
   dimensions,
   loadDocument,
-  persistDocument,
   normalize,
   statistics,
   saveFile,
   type Settings,
   type DocumentData,
 } from "./document";
+import { mergeAttributes } from "@tiptap/core";
+import { portableDocument, isPrivateImage } from "./portable-document";
+import { Account, type AccountControls } from "./Account";
 import { pagination, type PageLayout } from "./pagination";
 import { image, pdf } from "./export-document";
 
@@ -113,7 +115,7 @@ export default function App() {
     };
   }, []);
   return loaded ? (
-    <Workspace initial={loaded} />
+    <Account initial={loaded}>{(document, key, account) => <Workspace key={key} initial={document} account={account} />}</Account>
   ) : (
     <div className="loading">
       <span className="wordmark">Paperdown</span>
@@ -121,7 +123,7 @@ export default function App() {
     </div>
   );
 }
-function Workspace({ initial }: { initial: DocumentData }) {
+function Workspace({ initial, account }: { initial: DocumentData; account: AccountControls }) {
   const [doc, setDoc] = useState(initial),
     [saved, setSaved] = useState(true),
     [notice, setNotice] = useState(""),
@@ -147,6 +149,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
     pageButtonRef = useRef<HTMLButtonElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null),
     docRef = useRef(doc),
+    accountRef = useRef(account),
     saveSequence = useRef(Promise.resolve()),
     transferWindow = useRef<Window | null>(null),
     layout = useRef<PageLayout>({
@@ -156,6 +159,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
       gap: 24,
     });
   docRef.current = doc;
+  accountRef.current = account;
   const s = doc.settings,
     dim = dimensions(s),
     px = 96 / 25.4,
@@ -185,7 +189,11 @@ function Workspace({ initial }: { initial: DocumentData }) {
       TableKit.configure({ table: { resizable: true } }),
       TaskList,
       TaskItem.configure({ nested: true }),
-      TiptapImage.configure({
+      TiptapImage.extend({
+        renderHTML({ HTMLAttributes }) {
+          return ["img", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {crossorigin: isPrivateImage(HTMLAttributes.src || "") ? "use-credentials" : "anonymous"})];
+        },
+      }).configure({
         allowBase64: true,
         HTMLAttributes: { crossorigin: "anonymous" },
       }),
@@ -293,12 +301,13 @@ function Workspace({ initial }: { initial: DocumentData }) {
     return () => clearTimeout(timer);
   }, [notice]);
   useEffect(() => {
+    accountRef.current.changed(doc);
     setSaved(false);
     const timer = setTimeout(() => {
       const snapshot = doc;
       saveSequence.current = saveSequence.current
         .catch(() => {})
-        .then(() => persistDocument(snapshot));
+        .then(() => accountRef.current.persist(snapshot));
       void saveSequence.current
         .then(() => {
           if (docRef.current.updatedAt === snapshot.updatedAt) setSaved(true);
@@ -313,7 +322,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
     const flush = () => {
       saveSequence.current = saveSequence.current
         .catch(() => {})
-        .then(() => persistDocument(docRef.current));
+        .then(() => accountRef.current.persist(docRef.current));
     };
     window.addEventListener("pagehide", flush);
     return () => window.removeEventListener("pagehide", flush);
@@ -427,15 +436,19 @@ function Workspace({ initial }: { initial: DocumentData }) {
       updatedAt: Date.now(),
     }));
   }
-  function downloadDocument() {
-    saveFile(
-      new Blob([JSON.stringify(docRef.current, null, 2)], {
-        type: "application/json",
-      }),
-      `${filename}.paperdown.json`,
-    );
-    setMenu(null);
-    flash("서식과 이미지를 포함한 문서를 저장했습니다.");
+  async function downloadDocument() {
+    try {
+      const snapshot = docRef.current;
+      const portable = await portableDocument(snapshot);
+      saveFile(new Blob([JSON.stringify(portable, null, 2)], {type: "application/json"}),
+        `${(snapshot.title.trim() || "새로운 문서").replace(/[\\/:*?"<>|]/g, "-")}.paperdown.json`);
+      setMenu(null);
+      flash("서식과 이미지를 포함한 문서를 저장했습니다.");
+      return true;
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "문서를 내려받지 못했습니다.");
+      return false;
+    }
   }
   function replaceDocument(data: DocumentData) {
     if (!editor) return;
@@ -502,7 +515,9 @@ function Workspace({ initial }: { initial: DocumentData }) {
         canvas
           .getContext("2d")!
           .drawImage(img, 0, 0, canvas.width, canvas.height);
-        const src = canvas.toDataURL("image/png");
+        const src = account.upload
+          ? await account.upload(await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("이미지를 처리하지 못했습니다.")), "image/png")))
+          : canvas.toDataURL("image/png");
         editor
           .chain()
           .focus()
@@ -708,10 +723,10 @@ function Workspace({ initial }: { initial: DocumentData }) {
     window.addEventListener("keydown", key, true);
     return () => window.removeEventListener("keydown", key, true);
   });
-  function submitDialog() {
+  async function submitDialog() {
     if (!editor || !dialog) return;
     if (dialog.kind === "new") {
-      downloadDocument();
+      if (!await downloadDocument()) return;
       replaceDocument(
         normalize({
           title: "새로운 문서",
@@ -723,7 +738,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
       (dialog.kind === "import" || dialog.kind === "transfer") &&
       dialog.data
     ) {
-      downloadDocument();
+      if (!await downloadDocument()) return;
       replaceDocument(dialog.data);
       if (dialog.kind === "transfer")
         history.replaceState(null, "", location.pathname);
@@ -796,12 +811,13 @@ function Workspace({ initial }: { initial: DocumentData }) {
             }
           />
           <span className="save-state">
-            <span className={saved ? "saved-dot" : "saved-dot pending"} />
-            {saved ? "저장됨" : "저장 중"}
+            <span className={(account.saveLabel ? account.saveLabel === "계정에 저장됨" : saved) ? "saved-dot" : "saved-dot pending"} />
+            {account.saveLabel || (saved ? "이 기기에 저장됨" : "저장 중")}
           </span>
         </div>
         <div className="header-actions">
-          <Tool label="새 문서" onClick={() => openDialog({ kind: "new" })}>
+          {account.accountButton}
+          <Tool label="새 문서" onClick={() => account.upload ? account.create() : openDialog({ kind: "new" })}>
             <FilePlus2 size={17} />
           </Tool>
           <Tool label="문서 열기" onClick={() => importRef.current?.click()}>
@@ -949,8 +965,8 @@ function Workspace({ initial }: { initial: DocumentData }) {
             value={fontValue}
             onChange={(e) => applyFont(e.target.value as Settings["font"])}
           >
-            <option value="myeongjo">본명조</option>
-            <option value="sans">Pretendard</option>
+            <option value="myeongjo">명조</option>
+            <option value="sans">고딕</option>
           </SelectControl>
           <span className="size-field">
             <input
@@ -1448,7 +1464,7 @@ function Workspace({ initial }: { initial: DocumentData }) {
             <span className="selection-stat">선택 {selected.chars}자</span>
           )}
         </div>
-        <span className="storage-hint">이 브라우저에 자동 저장</span>
+        <span className="storage-hint">{account.saveLabel ? "계정에 자동 저장" : "이 브라우저에 자동 저장"}</span>
       </footer>
       {slash && slashItems.length > 0 && (
         <div

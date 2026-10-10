@@ -5,6 +5,7 @@ import {
   dimensions,
   statistics,
   DEFAULTS,
+  FONTS,
   isCurrentSnapshot,
 } from "../src/document.ts";
 test("migrates an existing Markdown draft and pixel typography without losing text", () => {
@@ -30,7 +31,7 @@ test("migrates legacy Source Serif marks without changing text or other formatti
   const d = normalize({ content, settings: { font: "serif" } });
   const text = d.content!.content![0].content![0];
   assert.equal(text.text, "기존 문장");
-  assert.equal(text.marks![0].attrs!.fontFamily, '"Noto Serif KR", serif');
+  assert.equal(text.marks![0].attrs!.fontFamily, FONTS.myeongjo);
   assert.equal(text.marks![0].attrs!.fontSize, "11.25pt");
   assert.equal(text.marks![1].type, "bold");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Source Serif/);

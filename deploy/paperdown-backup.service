@@ -1,0 +1,13 @@
+[Unit]
+Description=Back up Paperdown database and private files
+[Service]
+Type=oneshot
+User=paperdown
+Group=paperdown
+ExecStart=/usr/bin/node /opt/paperdown/deploy/backup.mjs
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/paperdown /var/backups/paperdown

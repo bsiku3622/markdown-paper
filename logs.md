@@ -1,3 +1,16 @@
+## 2026-10-10 — Add private accounts and synchronized notes
+
+- Files: account UI and API client, document/export integration, `backend/`, `deploy/`, README, and tests.
+- Summary: Add username/password registration and login, private multi-note storage, account image uploads, autosave with local draft recovery, and Gothic/Myeongjo font choices.
+
+SQLite and image files run under a dedicated system user on the existing SSH server, behind the existing Cloudflare Tunnel at `paperdown-api.bsiku.dev`. Mutation requests require the configured frontend origin, sessions use HttpOnly/Secure cookies and hashed tokens, and passwords use salted scrypt. Owner checks cover both notes and files. Daily systemd backups snapshot SQLite and images on the server; no off-server backup or retention automation was added.
+
+Autosave serializes writes, retains drafts by account and note, and checks server revisions to prevent simultaneous tabs from silently replacing each other's edits. Opening an unchanged document must not issue a new revision: doing so caused false conflicts during two-tab verification. Conflict recovery can create a separate note. Offline edits remained in the browser and synchronized when the connection returned. Guest storage stays separate from account drafts.
+
+Private image requests and raster exports include credentials. Document-file exports embed uploaded images rather than exporting session-dependent URLs, and replacement waits for its backup download to succeed. Myeongjo now uses Times New Roman/Times for supported Latin glyphs and Noto Serif KR for Korean; Gothic uses Pretendard. Times New Roman remains a system font rather than a redistributed asset. Existing Noto and Source Serif rich-text marks migrate to the new stack.
+
+Validation: seven document/API tests and production build passed. Browser checks covered registration, two-note switching and reload, font selection, private image upload, PDF export, portable document image embedding, conflict duplication, and offline retry. Public API health and the backup timer were verified after server deployment.
+
 ## 2026-10-07 — Strike completed task text
 
 - Files: `src/style.css`.

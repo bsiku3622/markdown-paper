@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard, and Noto Serif KR (Source Han Serif). Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text, and Times New Roman for Latin text with Noto Serif KR (Source Han Serif) for Korean in Myeongjo mode. Times New Roman uses the installed system font; where unavailable, the browser falls back to Times or Noto Serif KR. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document.
 
 ## Pages and exports
 
@@ -14,7 +14,9 @@ Download a `.paperdown.json` file to preserve all rich formatting and embedded i
 
 ## Storage and migration
 
-Documents and images are saved in this browser's IndexedDB, with a local storage fallback. There is no account, backend, or cloud document storage. Clearing browser site data removes drafts, so keep document file backups. Imported image files are embedded locally. Remote image hosts must allow CORS for image exports.
+Guests keep their document and embedded images in browser IndexedDB, with a local storage fallback. Register or log in with a username and password to manage multiple notes in a private account. The first account session imports the current guest document without removing the guest copy. Account notes save automatically to the API and retain unsynced drafts in an account-scoped browser cache. Concurrent edits use server revisions; conflicting drafts can be copied into a new note instead of overwriting another device's changes.
+
+Account images are stored behind the same authenticated API. Paperdown document downloads embed uploaded images so the downloaded file remains usable after logout. Remote image hosts must allow CORS for image exports. Clearing browser site data removes local drafts, so export unsynced work before clearing it. Account storage allows 1,000 active notes, 100MB of note data, and 500MB of uploaded images per account. Deleted notes remain soft-deleted in the database.
 
 The former address, `markdown.bsiku.dev`, remains available to recover existing local drafts. Its migration button opens Paperdown and transfers the current document directly between the browser windows using origin- and source-checked messages. Documents are never uploaded to a server during migration. The legacy address intentionally does not redirect before users can recover their browser storage.
 
@@ -28,6 +30,15 @@ npm run dev
 npm test
 npm run build
 ```
+
+For a local account API, use Node.js 22.18+ and run it with a separate data directory and the local frontend origin. In a second terminal, set the API URL before starting Vite:
+
+```sh
+DATA_DIR=backend/data ALLOWED_ORIGINS=http://localhost:4325 PUBLIC_URL=http://localhost:8792 COOKIE_SECURE=false npm run api
+VITE_API_URL=http://localhost:8792 npm run dev
+```
+
+Production runs `paperdown-api.service` on the SSH server, bound to loopback port 8792 and exposed through the existing Cloudflare Tunnel at `paperdown-api.bsiku.dev`. The environment file is `/etc/paperdown-api.env`; account data lives in `/var/lib/paperdown`. Passwords use salted scrypt hashes, sessions use hashed tokens and Secure/HttpOnly cookies, and mutation requests require the exact configured frontend origin. The daily `paperdown-backup.timer` snapshots SQLite and private files into `/var/backups/paperdown`. Backups currently remain on the same server and have no automatic retention policy. Unit and backup templates are in `deploy/`.
 
 Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
 
