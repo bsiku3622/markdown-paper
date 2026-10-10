@@ -15,4 +15,5 @@ for(const [path,info] of Object.entries(lock.packages)) {
 }
 await copyFile('node_modules/pretendard/dist/LICENSE.txt',join(destination,'Pretendard-OFL.txt'));
 await copyFile('vendor/paper-ui/LICENSE',join(destination,'Paper-UI-LICENSE.txt'));
+await copyFile('src/fonts/kopub-batang/OFL.txt',join(destination,'KoPub-Batang-OFL.txt'));
 await copyFile('LICENSE','cli/LICENSE');

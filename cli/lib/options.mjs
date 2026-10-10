@@ -23,7 +23,7 @@ Usage: paperdown-pdf <input.md|input.paperdown.json|-> [options]
   -h, --help            Show help
   -v, --version         Show version
 
-Myeongjo: Nanum Myeongjo for Latin and Korean.
+Myeongjo: KoPub Batang for Latin and Korean.
 Uses the Paperdown raster PDF renderer; text is not selectable.
 Document JSON keeps its saved page settings unless overridden.
 `;

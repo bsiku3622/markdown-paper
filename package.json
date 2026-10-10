@@ -13,7 +13,6 @@
     "install:cli": "node cli/install.mjs"
   },
   "dependencies": {
-    "@fontsource/nanum-myeongjo": "^5.3.0",
     "@fontsource/noto-serif-kr": "^5.3.0",
     "@studio-baeks/paper-ui": "file:vendor/paper-ui",
     "@tiptap/extension-highlight": "^3.31.4",
