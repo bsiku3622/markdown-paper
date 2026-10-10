@@ -1,3 +1,10 @@
+## 2026-10-11 — Unify Latin and Korean Myeongjo with Nanum
+
+- Files: document font settings, font imports/export selection, CLI notices, tests, and documentation.
+- Summary: Use Nanum Myeongjo for both Latin and Korean text in the browser and installed PDF CLI.
+
+The user's final preference supersedes the mixed Times and Latin Modern combinations. Existing Times, Latin Modern, Source Serif, and Noto rich-text marks normalize to the unified Nanum stack while preserving text and other formatting. Keep Noto Serif KR only for glyphs missing in Nanum. Remove the now-unused Latin Modern assets, stylesheet, and package notices. Thirteen tests passed, including migration of documents saved with Latin Modern. The CLI installation and personal skill were updated to match.
+
 ## 2026-10-11 — Match Myeongjo to the LaTeX font families
 
 - Files: document font settings, browser/CLI font imports, export font embedding, bundled Latin Modern assets, and documentation.

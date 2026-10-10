@@ -54,7 +54,6 @@ export async function documentFonts(node: HTMLElement) {
   const families = [
     "Pretendard Variable",
     "Noto Serif KR",
-    "Latin Modern Roman",
     "Nanum Myeongjo",
   ].filter((name) => family.includes(name));
   if (node.querySelector(".katex")) families.push("KaTeX");
