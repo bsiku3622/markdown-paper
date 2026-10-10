@@ -36,6 +36,18 @@ test("migrates legacy Source Serif marks without changing text or other formatti
   assert.equal(text.marks![1].type, "bold");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Source Serif/);
 });
+test("migrates mixed Times and Noto marks to unified Myeongjo", () => {
+  const content = {type: "doc", content: [{type: "paragraph", content: [{
+    type: "text", text: "Closed System인 이유",
+    marks: [{type: "textStyle", attrs: {fontFamily: '"Times New Roman", Times, "Noto Serif KR", serif', fontSize: "10pt"}}, {type: "italic"}],
+  }]}]};
+  const text = normalize({content}).content!.content![0].content![0];
+  assert.equal(text.marks![0].attrs!.fontFamily, '"Noto Serif KR", serif');
+  assert.equal(text.marks![0].attrs!.fontSize, "10pt");
+  assert.equal(text.marks![1].type, "italic");
+  assert.equal(text.text, "Closed System인 이유");
+  assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Times New Roman/);
+});
 test("preserves rich document structure and custom landscape dimensions", () => {
   const content = {
     type: "doc",
