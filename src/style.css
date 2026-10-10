@@ -647,7 +647,7 @@ hr {
 .document-content hr {
   margin: 1.6em 0;
 }
-.document-content img {
+.document-content img:not(.ProseMirror-separator) {
   display: block;
   max-width: 100%;
   max-height: var(--page-content-height);
