@@ -4,7 +4,6 @@ import { flushSync } from 'react-dom';
 import { PaperProvider } from '@studio-baeks/paper-ui';
 import '@studio-baeks/paper-ui/styles.css';
 import 'pretendard/dist/web/variable/pretendardvariable.css';
-import './fonts.css';
 import '@fontsource/nanum-myeongjo/400.css';
 import '@fontsource/nanum-myeongjo/700.css';
 import '@fontsource/noto-serif-kr/400.css';

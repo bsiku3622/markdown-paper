@@ -36,7 +36,7 @@ test("migrates legacy Source Serif marks without changing text or other formatti
   assert.equal(text.marks![1].type, "bold");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Source Serif/);
 });
-test("migrates legacy serif marks to Latin Modern and Nanum typography", () => {
+test("migrates legacy serif marks to unified Nanum typography", () => {
   const content = {type: "doc", content: [{type: "paragraph", content: [{
     type: "text", text: "Closed System인 이유",
     marks: [{type: "textStyle", attrs: {fontFamily: '"Times New Roman", Times, "Noto Serif KR", serif', fontSize: "10pt"}}, {type: "italic"}],
@@ -47,6 +47,12 @@ test("migrates legacy serif marks to Latin Modern and Nanum typography", () => {
   assert.equal(text.marks![1].type, "italic");
   assert.equal(text.text, "Closed System인 이유");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Times New Roman/);
+});
+test("migrates Latin Modern marks to unified Nanum typography", () => {
+  const content = {type: "doc", content: [{type: "paragraph", content: [{type: "text", text: "English와 한글", marks: [{type: "textStyle", attrs: {fontFamily: '\"Latin Modern Roman\", \"Nanum Myeongjo\", serif'}}]}]}]};
+  const text = normalize({content}).content!.content![0].content![0];
+  assert.equal(text.marks![0].attrs!.fontFamily, FONTS.myeongjo);
+  assert.equal(text.text, "English와 한글");
 });
 test("preserves rich document structure and custom landscape dimensions", () => {
   const content = {

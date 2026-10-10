@@ -15,7 +15,4 @@ for(const [path,info] of Object.entries(lock.packages)) {
 }
 await copyFile('node_modules/pretendard/dist/LICENSE.txt',join(destination,'Pretendard-OFL.txt'));
 await copyFile('vendor/paper-ui/LICENSE',join(destination,'Paper-UI-LICENSE.txt'));
-for (const file of ['LICENSE.txt','README.txt','MANIFEST.txt']) {
-  await copyFile(`src/fonts/latin-modern/${file}`,join(destination,`Latin-Modern-${file}`));
-}
 await copyFile('LICENSE','cli/LICENSE');
