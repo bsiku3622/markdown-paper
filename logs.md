@@ -1,3 +1,12 @@
+## 2026-10-11 — Try KoPub Batang as the Myeongjo default
+
+- Files: bundled KoPub webfonts, document font migration, export embedding, browser/CLI imports, tests, and documentation.
+- Summary: Replace Nanum Myeongjo with KoPub Batang for Latin and Korean text in Paperdown and the installed PDF CLI.
+
+Use the unmodified Google Fonts Light/Regular/Bold TrueType files with the SIL OFL 1.1 notice supplied in the Google Fonts KoPub directory. The publisher's current page has an embedding-approval notice while its downloadable terms differ; select the explicitly OFL-licensed Google Fonts distribution rather than interpreting that discrepancy. Bundling the original TrueType files preserves offline CLI rendering. The Early Access stylesheet advertises WOFF/WOFF2 URLs that currently return 404, so use the files in the Google Fonts source repository. Regular is the body face, Bold supplies heading/emphasis weight, and italic is synthesized because the family has no italic face. Noto Serif KR remains a fallback for missing glyphs.
+
+Existing Nanum, Latin Modern, Times, Source Serif, and Noto marks migrate to the new stack without replacing text or other formatting. Thirteen tests cover legacy migration and normal document/API/CLI behavior. The installed CLI and personal skill use the same font choice; page dimensions, margins, and font size are unchanged.
+
 ## 2026-10-11 — Unify Latin and Korean Myeongjo with Nanum
 
 - Files: document font settings, font imports/export selection, CLI notices, tests, and documentation.

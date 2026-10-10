@@ -2,7 +2,7 @@
 
 Convert Markdown or a portable Paperdown document into a PDF with the same typography, spacing, palette, task lists, tables, math, and raster export renderer as Paperdown.
 
-Markdown defaults to A4 pages, Myeongjo (Nanum Myeongjo for both Latin and Korean), 10pt text, 20mm margins, and 1.6 line height. Rich document JSON retains its stored settings unless a CLI option overrides them. Nanum Myeongjo and Pretendard are bundled. Noto Serif KR provides fallback glyphs.
+Markdown defaults to A4 pages, Myeongjo (KoPub Batang for both Latin and Korean), 10pt text, 20mm margins, and 1.6 line height. Rich document JSON retains its stored settings unless a CLI option overrides them. KoPub Batang and Pretendard are bundled. Noto Serif KR provides fallback glyphs.
 
 Convert a Markdown file and specify the output path:
 

@@ -54,7 +54,7 @@ export async function documentFonts(node: HTMLElement) {
   const families = [
     "Pretendard Variable",
     "Noto Serif KR",
-    "Nanum Myeongjo",
+    "KoPub Batang",
   ].filter((name) => family.includes(name));
   if (node.querySelector(".katex")) families.push("KaTeX");
   const rules: { rule: CSSFontFaceRule; base: string }[] = [];

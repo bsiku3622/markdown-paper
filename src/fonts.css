@@ -1,0 +1,22 @@
+/* Unmodified Google Fonts KoPub Batang; SIL OFL 1.1 in fonts/kopub-batang/OFL.txt. */
+@font-face {
+  font-family: 'KoPub Batang';
+  src: url('./fonts/kopub-batang/KoPubBatang-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'KoPub Batang';
+  src: url('./fonts/kopub-batang/KoPubBatang-Regular.ttf') format('truetype');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'KoPub Batang';
+  src: url('./fonts/kopub-batang/KoPubBatang-Bold.ttf') format('truetype');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
