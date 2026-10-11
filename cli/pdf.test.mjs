@@ -19,3 +19,19 @@ test('native PDF retains Korean/Latin text exactly once across page boundaries',
   assert.match(info,/Page size:.*\(A4\)/);
   assert.ok(Number(info.match(/Pages:\s+(\d+)/)[1])>1);
 });
+
+test('nested lists continue below headings instead of moving as a whole page block', {skip:!output,timeout:60_000},()=>{
+  for (const count of [12,20]) {
+    const input=join(output,`list-pagination-${count}.md`),pdf=join(output,`list-pagination-${count}.pdf`);
+    const intro=Array.from({length:8},(_,i)=>`INTRO${i} 페이지 분할 앞부분의 문단입니다. 문서의 남은 공간을 사용합니다.`).join('\n\n');
+    const list=Array.from({length:count},(_,i)=>`- LISTMARKER${String(i).padStart(3,'0')} 한글 English 목록 내용\n  - NESTEDMARKER${String(i).padStart(3,'0')} 중첩 목록`).join('\n');
+    writeFileSync(input,`# 목록 분할 검증\n\n${intro}\n\n## SECTIONMARKER\n\n${list}`);
+    execFileSync(process.execPath,[resolve('cli/bin/paperdown-pdf.mjs'),input,'--force','-o',pdf],{timeout:50_000});
+    const text=execFileSync('pdftotext',[pdf,'-'],{encoding:'utf8'});
+    const pages=text.split('\f');
+    const headingPage=pages.findIndex(page=>page.includes('SECTIONMARKER'));
+    assert.ok(pages[headingPage].includes('LISTMARKER000'),'heading must share its page with the first list item');
+    assert.ok(pages.slice(headingPage+1).some(page=>page.includes(`LISTMARKER${String(count-1).padStart(3,'0')}`)),'the list must continue across sheets');
+    for(let i=0;i<count;i++) for(const prefix of ['LISTMARKER','NESTEDMARKER']) assert.equal(text.split(`${prefix}${String(i).padStart(3,'0')}`).length-1,1);
+  }
+});
