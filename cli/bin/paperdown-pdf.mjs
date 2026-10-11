@@ -47,7 +47,7 @@ async function main() {
   try {
     await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
     const origin=`http://127.0.0.1:${server.address().port}`;
-    browser=await chromium.launch({headless:true,chromiumSandbox:true,...(o.values.browser?{executablePath:resolve(o.values.browser)}:{channel:'chrome'})});
+    browser=await chromium.launch({headless:true,chromiumSandbox:true,args:['--font-render-hinting=none'],...(o.values.browser?{executablePath:resolve(o.values.browser)}:{channel:'chrome'})});
     const page=await browser.newPage({viewport:{width:2200,height:1400}});
     await page.route('**/*',route=>route.request().url().startsWith(`${origin}/${token}/`) ? route.continue() : route.abort());
     await page.exposeFunction('resolvePaperdownImage',src=>imageSource(src,resolve(o.values['asset-dir']||(o.input==='-'?process.cwd():dirname(o.input))),!!o.values['allow-remote']));

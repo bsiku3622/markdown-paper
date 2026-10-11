@@ -22,7 +22,7 @@ export async function renderPdf(input) {
   jobs++;
   let browser, server;
   try {
-    const css = (await readdir(join(renderer,'assets'))).find(name => name.endsWith('.css'));
+    const css = (await readdir(join(renderer,'assets'))).find(name => !name.startsWith('.') && name.endsWith('.css'));
     if (!css) throw new Error('PDF renderer assets are missing.');
     const token = randomBytes(16).toString('hex');
     server = createServer(async (req,res) => {
@@ -34,23 +34,31 @@ export async function renderPdf(input) {
           res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});
           res.end(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${escape(value.title)}</title><link rel="stylesheet" href="/${token}/assets/${css}"><style>@page{size:${value.width}mm ${value.height}mm;margin:0}html,body{margin:0;padding:0;background:white}.pdf-output{display:block!important}</style></head><body><div class="pdf-output">${value.html}</div></body></html>`);return;
         }
-        const match = path.match(new RegExp(`^/${token}/assets/([a-zA-Z0-9._-]+)(\\.css|\\.woff2|\\.woff|\\.ttf|\\.otf)$`));
+        const prefix = `/${token}/assets/`;
+        const name = path.startsWith(prefix) ? path.slice(prefix.length) : '';
+        const match = name.match(/^[a-zA-Z0-9._-]+(\.css|\.woff2|\.woff|\.ttf|\.otf)$/);
         if (!match) {res.writeHead(404);res.end();return;}
-        const bytes = await readFile(join(renderer,'assets',match[1]+match[2]));
-        res.writeHead(200,{'Content-Type':types[match[2]]});res.end(bytes);
+        const bytes = await readFile(join(renderer,'assets',name));
+        res.writeHead(200,{'Content-Type':types[match[1]]});res.end(bytes);
       } catch {res.writeHead(404);res.end();}
     });
     await new Promise((resolve,reject) => {server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
     const origin = `http://127.0.0.1:${server.address().port}`;
     const {chromium} = require('playwright-core');
-    browser = await chromium.launch({headless:true,chromiumSandbox:true,...(process.env.PDF_BROWSER ? {executablePath:resolve(process.env.PDF_BROWSER)} : process.platform==='darwin'?{channel:'chrome'}:{})});
+    browser = await chromium.launch({headless:true,chromiumSandbox:true,args:['--font-render-hinting=none'],...(process.env.PDF_BROWSER ? {executablePath:resolve(process.env.PDF_BROWSER)} : process.platform==='darwin'?{channel:'chrome'}:{})});
     const context = await browser.newContext({javaScriptEnabled:false});
     await context.route('**/*',route => route.request().url().startsWith(`${origin}/${token}/`) ? route.continue() : route.abort());
     const page = await context.newPage();
     page.setDefaultTimeout(35_000);
     const render = async () => {
       await page.goto(`${origin}/${token}/document`,{waitUntil:'load'});
-      await page.evaluate(async () => {await document.fonts.ready;await Promise.all([...document.images].map(img => img.decode()));});
+      await page.evaluate(async () => {
+        const stylesheet = document.querySelector('link[rel="stylesheet"]');
+        if (!stylesheet?.sheet || ![...document.styleSheets].some(sheet => sheet.href && sheet.cssRules.length)) throw new Error('PDF stylesheet failed to load.');
+        await document.fonts.ready;
+        if (![...document.fonts].length || [...document.fonts].some(font => font.status === 'error')) throw new Error('PDF fonts failed to load.');
+        await Promise.all([...document.images].map(img => img.decode()));
+      });
       return page.pdf({...pdfOptions,timeout:35_000});
     };
     let timer;
