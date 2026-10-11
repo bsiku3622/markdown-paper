@@ -1,6 +1,6 @@
 # Paperdown PDF
 
-Convert Markdown or a portable Paperdown document into a PDF with the same typography, spacing, palette, task lists, tables, math, and raster export renderer as Paperdown.
+Convert Markdown or a portable Paperdown document into a selectable, searchable text PDF with the same typography, spacing, palette, task lists, tables, math, page breaks, and page numbers as Paperdown.
 
 Markdown defaults to A4 pages, Myeongjo (KoPub Batang for both Latin and Korean), 10pt text, 20mm margins, and 1.6 line height. Rich document JSON retains its stored settings unless a CLI option overrides them. KoPub Batang and Pretendard are bundled. Noto Serif KR provides fallback glyphs.
 
@@ -41,4 +41,4 @@ paperdown-pdf --help
 
 ## PDF limits
 
-PDFs preserve visual appearance as raster images, so text is not selectable or searchable. Raster resolution decreases for long documents, and content height is limited to 28,000 CSS pixels; continuous pages are limited to 5 metres. Large indivisible blocks should be split manually when they exceed a page. Generated files include title metadata without inserting an extra visible heading. Third-party license notices ship in `renderer/licenses/`.
+PDFs use Chrome's native print engine with embedded subset fonts. Text remains selectable and searchable, and lines, tables, and math stay sharp when zoomed. Only actual source images are raster images. The shared page preparation keeps the existing editor pagination instead of letting print CSS create a different set of page breaks. Continuous pages are limited to 5 metres; the old canvas-height and decreasing-resolution limits do not apply to PDF. Large indivisible blocks should be split manually when they exceed a page. Generated files include title metadata without inserting an extra visible heading. For matching editor exports, use the same saved Paperdown JSON and renderer version; Markdown does not carry editor-only text marks. Third-party license notices ship in `renderer/licenses/`.

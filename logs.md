@@ -1,3 +1,16 @@
+## 2026-10-11 — Replace raster PDFs with native text output
+
+- Files: shared PDF page preparation, web/API downloads, CLI printing and metadata, renderer deployment, regression tests, export documentation, and installed CLI skill.
+- Summary: Preserve the editor's page geometry while producing selectable/searchable Korean and Latin text with embedded fonts.
+
+Keep the existing editor pagination and clone each page viewport with an absolute offset, excluding the 24px screen gap. Do not ask the browser's print paginator to decide new line/page breaks. Wait for every used font face, images, and stable page decorations before capture. Native Chromium prints text, rules, tables, and math; only source illustrations remain raster images. Include the editor's page numbers. PNG keeps its separate canvas renderer and limits. A rich Paperdown JSON preserves editor-only marks that plain Markdown cannot carry.
+
+The initial browser-print approach would let user-selected print scaling/margins alter output. Use direct web downloads instead: send the prepared page DOM and embedded images to the existing API, print with the same bundled CLI CSS/fonts and fixed native PDF options, and return bytes without storing the job. Jobs disable JavaScript, block external requests and file access, retain Chromium sandboxing and service hardening, and bound input size, page count, concurrency, rate, and execution time. API renderer assets must be deployed with the matching web build. Guest exports remain available; account/file ownership checks are unchanged.
+
+Local browser verification used a four-page document with Korean/Latin, rich text, a table, checked/unchecked tasks, inline math, and repeated paragraphs crossing page boundaries. Web download and CLI PDF images matched pixel-for-pixel on all four pages at 96dpi, including a web export at 125% screen zoom. Native text extraction and embedded fonts were verified. The supplied Earth System example was regenerated from its Markdown with local images; its Markdown bold delimiters next to Korean suffixes use the same separating-space adjustment as the original conversion workflow. The original school files were preserved.
+
+Native integration tests check every Korean/Latin marker is extracted exactly once across pages and that text-only documents contain no raster page images. Backend checks reject invalid geometry/oversized jobs and disallowed origins. Existing document, account, and CLI checks passed with the new integration checks. The API service still runs as `paperdown` with `NoNewPrivileges`, `ProtectSystem`, and the browser sandbox enabled; fonts/styles are local-only and browser cache lives under the existing service data directory.
+
 ## 2026-10-11 — Add the document library and stable document URLs
 
 - Files: `src/Home.tsx`, routes, account/editor navigation, responsive styles, route tests, Vercel rewrites, and README.

@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { chromium } from 'playwright-core';
 import { options, help } from '../lib/options.mjs';
 import { imageSource } from '../lib/assets.mjs';
+import { pdfOptions } from '../lib/pdf.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../renderer');
 const manifest=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
@@ -53,7 +54,7 @@ async function main() {
     await page.goto(`${origin}/${token}/cli/render.html`);
     await page.waitForFunction(()=>typeof window.renderPaperdown==='function');
     const result=await page.evaluate(document=>window.renderPaperdown(document),document);
-    const bytes=Buffer.from(result.pdf,'base64');
+    const bytes=await page.pdf(pdfOptions);
     if(bytes.subarray(0,5).toString()!=='%PDF-') throw new Error('Renderer did not return a PDF.');
     if(o.output==='-') await new Promise((resolve,reject)=>process.stdout.write(bytes,e=>e?reject(e):resolve()));
     else await writeFile(o.output,bytes,{flag:o.values.force?'w':'wx'});

@@ -93,6 +93,15 @@ export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], 
       if (!['GET','HEAD'].includes(method) && !origins.includes(origin)) fail(403,'요청 출처를 확인하지 못했습니다.');
       if (path === '/health' && method === 'GET') { db.prepare('SELECT 1').get(); return send(200,{ok:true}); }
       limit(req,'api',600,60_000);
+      if (path === '/exports/pdf' && method === 'POST') {
+        limit(req,'pdf',12,60_000);
+        const input = await jsonBody(req,45_000_000);
+        const {validatePdf,renderPdf} = await import('./pdf.mjs');
+        try {validatePdf(input);} catch(e) {fail(400,e.message);}
+        let bytes;
+        try {bytes = await renderPdf(input);} catch(e) {console.error('PDF export failed:',e.message);fail(e.status || 503,e.status?e.message:'PDF를 만들지 못했습니다. 잠시 후 다시 시도해주세요.');}
+        res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':"attachment; filename=paperdown.pdf"});res.end(bytes);return;
+      }
       if (['/auth/register','/auth/login'].includes(path) && method === 'POST') {
         limit(req,'auth',30);
         if (path.endsWith('register')) limit(req,'register',10,3600_000);
