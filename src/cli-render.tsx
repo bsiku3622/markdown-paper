@@ -22,12 +22,12 @@ import Highlight from '@tiptap/extension-highlight';
 import Mathematics from '@tiptap/extension-mathematics';
 import { dimensions, FONTS, normalize, type DocumentData } from './document';
 import { pagination } from './pagination';
-import { pdf } from './export-document';
+import { preparePdf } from './pdf-document';
 
 declare global {
   interface Window {
     resolvePaperdownImage: (source: string) => Promise<string>;
-    renderPaperdown: (document: DocumentData) => Promise<{pdf:string;pages:number;width:number;height:number}>;
+    renderPaperdown: (document: DocumentData) => Promise<{pages:number;width:number;height:number}>;
   }
 }
 flushSync(()=>createRoot(document.getElementById('root')!).render(<PaperProvider defaultTheme="light"><div id="paperdown-render"/></PaperProvider>));
@@ -35,7 +35,7 @@ window.renderPaperdown=async value=> {
   const doc=normalize(value), s=doc.settings, dim=dimensions(s), px=96/25.4;
   const host=document.getElementById('paperdown-render')!;
   const editor=new Editor({element:host,editable:false,extensions:[
-    StarterKit,Markdown,TableKit,TaskList,TaskItem.configure({nested:true}),Image.configure({allowBase64:true}),
+    StarterKit,Markdown,TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true}),Image.configure({allowBase64:true}),
     TextAlign.configure({types:['heading','paragraph']}),TextStyleKit,Highlight.configure({HTMLAttributes:{class:'text-highlight'}}),
     Mathematics.configure({katexOptions:{throwOnError:false}}),
     pagination(()=>({enabled:s.mode==='pages',height:dim.height*px,margin:s.margin*px,gap:24})),
@@ -45,21 +45,8 @@ window.renderPaperdown=async value=> {
   node.querySelectorAll<HTMLElement>(".ProseMirror-separator").forEach(el => {el.style.cssText="display:inline!important;width:0;height:0;margin:0!important;padding:0;border:0";});
   try {
     await Promise.all(Array.from(node.querySelectorAll<HTMLImageElement>('img:not(.ProseMirror-separator)')).map(async img=>{if(!img.getAttribute('src')) throw new Error('Image has no source URL.');img.src=await window.resolvePaperdownImage(img.getAttribute('src')!);await img.decode();}));
-    await document.fonts.ready;
-    // Pagination measures after fonts/images settle; wait until layout stops changing.
-    let last='',stable=0;
-    for(let i=0;i<180;i++) {
-      await new Promise(resolve=>requestAnimationFrame(resolve));
-      const signature=`${node.scrollHeight}:${Array.from(node.querySelectorAll('[data-page-spacer]')).map(el=>el.getAttribute('data-page-spacer')).join(',')}`;
-      stable=signature===last?stable+1:0;last=signature;
-      if(stable>=5) break;
-      if(i===179) throw new Error('Page layout did not stabilize.');
-    }
-    const pages=s.mode==='pages'?Math.max(1,Math.ceil((node.scrollHeight+24-0.5)/(dim.height*px+24))):1;
-    const buffer=await pdf(node,s,pages,doc.title,false);
-    if(!buffer) throw new Error('No PDF output.');
-    const bytes=new Uint8Array(buffer);let binary='';
-    for(let i=0;i<bytes.length;i+=32768) binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
-    return {pdf:btoa(binary),pages,width:dim.width,height:s.mode==='pages'?dim.height:Math.round(node.scrollHeight/px*100)/100};
+    const print=await preparePdf(node,s,1);
+    document.title=doc.title;
+    return {pages:print.pages,width:print.width,height:print.height};
   } finally {editor.destroy();}
 };

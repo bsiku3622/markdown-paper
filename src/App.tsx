@@ -65,7 +65,8 @@ import { portableDocument, isPrivateImage } from "./portable-document";
 import { Account, type AccountControls } from "./Account";
 import { PaperTypography } from "./typography";
 import { pagination, type PageLayout } from "./pagination";
-import { image, pdf } from "./export-document";
+import { image } from "./export-document";
+import { pdf } from "./pdf-document";
 
 const OLD_ORIGIN = "https://markdown.bsiku.dev",
   NEW_ORIGIN = "https://paperdown.bsiku.dev";
@@ -568,7 +569,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     setBusy("PDF 만드는 중");
     try {
       await pdf(editor.view.dom, s, pages, filename);
-      flash("PDF를 다운로드했습니다.");
+      flash("텍스트 PDF를 다운로드했습니다.");
     } catch (e) {
       flash(e instanceof Error ? e.message : "PDF를 만들지 못했습니다.");
     } finally {
@@ -852,10 +853,10 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 <button role="menuitem" onClick={() => void exportPdf()}>
                   <FileText size={18} />
                   <span>
-                    PDF 다운로드
+                    PDF로 저장
                     <small>
                       {s.mode === "pages"
-                        ? `${pages}페이지 · 용지 크기 유지`
+                        ? `${pages}페이지 · 선택·검색 가능한 텍스트`
                         : "한 장의 긴 문서 · 현재 높이"}
                     </small>
                   </span>

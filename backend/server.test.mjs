@@ -17,6 +17,8 @@ test('accounts, note ownership, optimistic saves, private files and session revo
  }
  try {
   assert.equal((await call('/notes')).status,401);
+  assert.equal((await call('/exports/pdf',{method:'POST',data:{html:'x',title:'x',width:Infinity,height:297,pages:1}})).status,400);
+  assert.equal((await call('/exports/pdf',{method:'POST',origin:'https://evil.test',data:{}})).status,403);
   assert.equal((await call('/auth/register',{method:'POST',data:{username:'invalid spaces',password:'long password'}})).status,400);
   const a=await call('/auth/register',{method:'POST',data:{username:'alpha',password:'long password alpha'}});assert.equal(a.status,200);assert.match(a.cookie,/paperdown-session=/);
   assert.equal((await call('/auth/register',{method:'POST',data:{username:'ALPHA',password:'long password alpha'}})).status,409);

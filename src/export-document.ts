@@ -1,4 +1,4 @@
-import { toCanvas, toBlob } from "html-to-image";
+import { toBlob } from "html-to-image";
 import { isPrivateImage, privateImageData } from "./portable-document";
 import { documentFonts } from "./export-fonts";
 import { dimensions, FONTS, saveFile, type Settings } from "./document";
@@ -49,15 +49,13 @@ export async function capture(editor: HTMLElement, s: Settings, pages: number) {
   box.append(node);
   document.body.append(box);
   await new Promise((resolve) => requestAnimationFrame(resolve));
-  if (node.scrollHeight > 28000) {
-    box.remove();
-    throw new Error("문서가 너무 깁니다. 나누어 내보내주세요.");
-  }
   return { node, pageCount, dispose: () => box.remove() };
 }
 export async function image(editor: HTMLElement, s: Settings, pages: number) {
   const { node, dispose } = await capture(editor, s, pages);
   try {
+    if (node.scrollHeight > 28000)
+      throw new Error("이미지로 내보내기에는 문서가 너무 깁니다. PDF를 사용해주세요.");
     const blob = await toBlob(node, {
       width: (dimensions(s).width * 96) / 25.4,
       height: node.scrollHeight,
@@ -74,82 +72,6 @@ export async function image(editor: HTMLElement, s: Settings, pages: number) {
     });
     if (!blob) throw new Error("이미지를 만들지 못했습니다.");
     return blob;
-  } finally {
-    dispose();
-  }
-}
-export async function pdf(
-  editor: HTMLElement,
-  s: Settings,
-  pages: number,
-  name: string,
-  download = true,
-) {
-  const { node, dispose, pageCount } = await capture(editor, s, pages);
-  try {
-    const ratio = Math.min(2, 16000 / node.scrollHeight);
-    const canvas = await toCanvas(node, {
-      width: (dimensions(s).width * 96) / 25.4,
-      height: node.scrollHeight,
-      pixelRatio: ratio,
-      backgroundColor: getComputedStyle(node).backgroundColor,
-      style: {
-        position: "static",
-        inset: "auto",
-        margin: "0",
-        transform: "none",
-        zoom: "1",
-      },
-      fontEmbedCSS: await documentFonts(node),
-    });
-    const { jsPDF } = await import("jspdf");
-    const { width, height } = dimensions(s);
-    const pageHeight =
-      s.mode === "pages" ? height : (canvas.height / canvas.width) * width;
-    if (pageHeight > 5000)
-      throw new Error(
-        "무한 높이 PDF는 최대 5m까지 지원합니다. 페이지 분할을 선택해주세요.",
-      );
-    const doc = new jsPDF({
-      unit: "mm",
-      format: [width, pageHeight],
-      orientation: width > pageHeight ? "landscape" : "portrait",
-    });
-    doc.setProperties({ title: name, creator: "Paperdown" });
-    if (s.mode === "continuous")
-      doc.addImage(canvas, "PNG", 0, 0, width, pageHeight, undefined, "FAST");
-    else {
-      const actualRatio = canvas.width / ((width * 96) / 25.4);
-      const stride = ((height * 96) / 25.4 + 24) * actualRatio;
-      const sliceHeight = ((height * 96) / 25.4) * actualRatio;
-      for (let page = 0; page < pageCount; page++) {
-        const part = document.createElement("canvas");
-        part.width = canvas.width;
-        part.height = Math.round(sliceHeight);
-        const ctx = part.getContext("2d")!;
-        ctx.fillStyle = getComputedStyle(node).backgroundColor;
-        ctx.fillRect(0, 0, part.width, part.height);
-        ctx.drawImage(
-          canvas,
-          0,
-          Math.round(page * stride),
-          canvas.width,
-          Math.min(part.height, canvas.height - Math.round(page * stride)),
-          0,
-          0,
-          part.width,
-          Math.min(part.height, canvas.height - Math.round(page * stride)),
-        );
-        if (page)
-          doc.addPage(
-            [width, height],
-            width > height ? "landscape" : "portrait",
-          );
-        doc.addImage(part, "PNG", 0, 0, width, height, undefined, "FAST");
-      }
-    }
-    if (!download) return doc.output("arraybuffer");
-    doc.save(`${name}.pdf`);
   } finally {
     dispose();
   }

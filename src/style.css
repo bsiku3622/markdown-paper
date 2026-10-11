@@ -918,6 +918,17 @@ hr {
 .export-document .selectedCell:after {
   display: none;
 }
+.pdf-output { display: none; }
+.pdf-page {
+  position: relative;
+  overflow: hidden;
+  break-after: page;
+  break-inside: avoid;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.pdf-page:last-child { break-after: auto; }
+.pdf-page .page-number { z-index: 0; }
 @media (min-width: 1600px) {
   .app-header {
     padding: 0 35px;

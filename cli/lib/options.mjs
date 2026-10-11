@@ -24,7 +24,7 @@ Usage: paperdown-pdf <input.md|input.paperdown.json|-> [options]
   -v, --version         Show version
 
 Myeongjo: KoPub Batang for Latin and Korean.
-Uses the Paperdown raster PDF renderer; text is not selectable.
+Uses the Paperdown native text PDF renderer; text is selectable and searchable.
 Document JSON keeps its saved page settings unless overridden.
 `;
 

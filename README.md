@@ -8,7 +8,7 @@ Write directly in the finished layout, with Markdown input shortcuts and a compa
 
 Choose A4, A5, Letter, or custom dimensions, portrait or landscape, margins, and screen zoom. Continuous documents fit their content and vertical margins exactly. Paginated documents use the selected page height and visual page spacers that never become document content. Font sizes use points, including 9pt and 10pt; display zoom does not change exported dimensions.
 
-Copy the document as an image or download PNG and PDF. Continuous PDFs use one page fitted to the content; paginated PDFs preserve page dimensions and exclude the screen gaps between sheets. PDFs currently preserve appearance as raster images rather than selectable text. Very long exports reduce raster resolution to stay within browser canvas limits; export height is limited to 28,000 CSS pixels, with continuous PDF pages limited to 5 metres. Large indivisible blocks such as tables should be split manually when they exceed one page.
+Copy the document as an image or download PNG and a selectable, searchable text PDF. Paginated PDFs preserve the editor's actual line positions, page breaks, page dimensions, colors, and page numbers; screen zoom and gaps between sheets are excluded. The web API prints the prepared page DOM using sandboxed Chromium and the same bundled CSS/fonts as the CLI. It does not reparse Markdown or reflow a saved document into a different layout. PDF jobs are transient and are not saved to account storage. Web PDF downloads require an API connection; PNG exports remain local. Continuous PDFs use one page fitted to the content, up to 5 metres. Web PDF jobs allow up to 200 pages and 40MB of prepared HTML. PNG exports retain the 28,000 CSS-pixel canvas limit. Large indivisible blocks should be split manually when they exceed one page.
 
 Download a `.paperdown.json` file to preserve all rich formatting and embedded images, or `.md` for portable Markdown. Markdown does not preserve all font, alignment, or highlight attributes. Opening another document or starting a new one first downloads a backup of the current document.
 
@@ -52,7 +52,11 @@ The existing browser-local document opens at `/documents/local`, remains separat
 
 Install the local command with `npm run install:cli`, then run `paperdown-pdf notes.md -o notes.pdf`. Markdown defaults to A4 pages, KoPub Batang for both Latin and Korean text, 10pt text, and 20mm margins. Portable Paperdown JSON retains its saved settings. The command includes the same renderer and bundled fonts as the editor and requires Node.js 22.18+ and installed Google Chrome.
 
-See [CLI usage and options](cli/README.md) for custom paper sizes, continuous height, local images, and stdin/stdout. PDFs use the web editor's raster export; text is not selectable or searchable.
+See [CLI usage and options](cli/README.md) for custom paper sizes, continuous height, local images, and stdin/stdout. The CLI prints locally without sending documents to the API. Use a Paperdown document JSON to preserve all rich-text marks and settings; Markdown alone cannot preserve editor-only formatting.
+
+The API's PDF endpoint requires `npm ci --prefix cli --ignore-scripts`, `npm run build:cli`, and a Playwright Chromium installation accessible to the service user. Set `PLAYWRIGHT_BROWSERS_PATH` to the installed browser directory. PDF jobs disable JavaScript and external networking, allow only bundled stylesheet/font requests and embedded images, keep the browser sandbox enabled, and bound concurrency, input size, rate, and execution time. Deploy the renderer assets together with the web build to keep their CSS/fonts aligned.
+
+Run native PDF regression checks with `PAPERDOWN_PDF_TEST_DIR=/absolute/test-output npm test` after building the CLI renderer. They require Chrome and Poppler and verify searchable Korean/Latin text, no raster page images, page dimensions, and no lost or duplicated text across page boundaries.
 
 ## Shortcuts
 
