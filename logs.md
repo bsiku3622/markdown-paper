@@ -1,3 +1,12 @@
+## 2026-10-11 — Split nested lists across document pages
+
+- Files: `src/pagination.ts`, native PDF list regression checks, installed CLI, and matching web/API renderer builds.
+- Summary: Treat lists, list items, task lists, and quotes as flow containers so their paragraphs can fill the remaining sheet instead of moving the entire list.
+
+The original paginator only visited top-level blocks. A heading's keep-with-next rule reserved two lines, but the following list was then moved as a single block, leaving a nearly empty page with just its heading. Lists taller than one printable page could also cross margins without spacers and lose text during PDF clipping. Recursively measure container paragraphs using their real ProseMirror positions; keep text, undo history, and document JSON unchanged. Native exports continue to use the same page decorations as the editor.
+
+Regression fixtures cover both a list that fits one sheet and a longer nested list. They require the first item to stay with its heading, continuation on later pages, and every parent/nested marker exactly once. The regression fails against the previous paginator and passes after the fix; all 18 checks pass. The supplied Earth System document now has six pages instead of seven, with all 844 extracted words matching the previous output. All six pages were rendered and visually reviewed. Images remain indivisible, so an image that does not fit the remaining space still moves to the next page.
+
 ## 2026-10-11 — Replace raster PDFs with native text output
 
 - Files: shared PDF page preparation, web/API downloads, CLI printing and metadata, renderer deployment, regression tests, export documentation, and installed CLI skill.

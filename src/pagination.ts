@@ -1,6 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { EditorView } from "@tiptap/pm/view";
 export const paginationKey = new PluginKey("paperdown-pages");
 export type PageLayout = {
@@ -127,52 +128,65 @@ export function pagination(getLayout: () => PageLayout) {
                   }
                 }
               }
-              view.state.doc.forEach((node, pos, index) => {
-                const el = view.nodeDOM(pos) as HTMLElement | null;
-                if (!el?.getBoundingClientRect) return;
-                const r = el.getBoundingClientRect();
-                const top = baseY((r.top - rect.top) / scale),
-                  bottom = baseY((r.bottom - rect.top) / scale);
-                if (node.isTextblock && bottom - top > inner) {
-                  let lastTop = -1;
-                  node.descendants((child, offset) => {
-                    if (!child.isText) return;
-                    const text = child.text || "";
-                    for (let i = 0; i < text.length;) {
-                      const p = pos + 1 + offset + i;
-                      const c = view.coordsAtPos(p, 1);
-                      const t = baseY((c.top - rect.top) / scale);
-                      const b = baseY((c.bottom - rect.top) / scale);
-                      if (Math.abs(t - lastTop) > 2) {
-                        place(p, t, b, true);
-                        lastTop = t;
-                      }
-                      i += text.codePointAt(i)! > 0xffff ? 2 : 1;
-                    }
-                  });
-                } else {
-                  let keepTo = bottom;
+              // Lists and quotes are flow containers, not indivisible page blocks.
+              // Measure their paragraphs recursively so a long list can use the
+              // remaining page space and continue on the following sheet.
+              function visit(parent: ProseMirrorNode, start: number) {
+                parent.forEach((node, offset, index) => {
+                  const pos = start + offset;
                   if (
-                    node.type.name === "heading" &&
-                    index + 1 < view.state.doc.childCount
+                    ["bulletList", "orderedList", "taskList", "listItem", "taskItem", "blockquote"].includes(node.type.name)
                   ) {
-                    const next = view.nodeDOM(
-                      pos + node.nodeSize,
-                    ) as HTMLElement | null;
-                    if (next) {
-                      const nextRect = next.getBoundingClientRect();
-                      const nextTop = baseY((nextRect.top - rect.top) / scale);
-                      const line =
-                        parseFloat(getComputedStyle(next).lineHeight) || 24;
-                      keepTo = Math.max(
-                        bottom,
-                        nextTop + Math.min(nextRect.height / scale, line * 2),
-                      );
-                    }
+                    visit(node, pos + 1);
+                    return;
                   }
-                  place(pos, top, keepTo, false);
-                }
-              });
+                  const el = view.nodeDOM(pos) as HTMLElement | null;
+                  if (!el?.getBoundingClientRect) return;
+                  const r = el.getBoundingClientRect();
+                  const top = baseY((r.top - rect.top) / scale),
+                    bottom = baseY((r.bottom - rect.top) / scale);
+                  if (node.isTextblock && bottom - top > inner) {
+                    let lastTop = -1;
+                    node.descendants((child, offset) => {
+                      if (!child.isText) return;
+                      const text = child.text || "";
+                      for (let i = 0; i < text.length;) {
+                        const p = pos + 1 + offset + i;
+                        const c = view.coordsAtPos(p, 1);
+                        const t = baseY((c.top - rect.top) / scale);
+                        const b = baseY((c.bottom - rect.top) / scale);
+                        if (Math.abs(t - lastTop) > 2) {
+                          place(p, t, b, true);
+                          lastTop = t;
+                        }
+                        i += text.codePointAt(i)! > 0xffff ? 2 : 1;
+                      }
+                    });
+                  } else {
+                    let keepTo = bottom;
+                    if (
+                      node.type.name === "heading" &&
+                      index + 1 < parent.childCount
+                    ) {
+                      const next = view.nodeDOM(
+                        pos + node.nodeSize,
+                      ) as HTMLElement | null;
+                      if (next) {
+                        const nextRect = next.getBoundingClientRect();
+                        const nextTop = baseY((nextRect.top - rect.top) / scale);
+                        const line =
+                          parseFloat(getComputedStyle(next).lineHeight) || 24;
+                        keepTo = Math.max(
+                          bottom,
+                          nextTop + Math.min(nextRect.height / scale, line * 2),
+                        );
+                      }
+                    }
+                    place(pos, top, keepTo, false);
+                  }
+                });
+              }
+              visit(view.state.doc, 0);
               const same =
                 previous.length === breaks.length &&
                 previous.every(
