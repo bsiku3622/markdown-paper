@@ -9,3 +9,6 @@ node_modules/
 backend/data/
 cli/renderer/
 cli/*.tgz
+
+# local work log
+logs.md
