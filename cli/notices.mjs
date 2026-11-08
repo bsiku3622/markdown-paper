@@ -14,6 +14,6 @@ for(const [path,info] of Object.entries(lock.packages)) {
   } catch { /* Some lock entries are optional packages absent on this platform. */ }
 }
 await copyFile('node_modules/pretendard/dist/LICENSE.txt',join(destination,'Pretendard-OFL.txt'));
-await copyFile('vendor/paper-ui/LICENSE',join(destination,'Paper-UI-LICENSE.txt'));
+await copyFile('node_modules/@studio-baeks/paper-ui/LICENSE',join(destination,'Paper-UI-LICENSE.txt'));
 await copyFile('src/fonts/kopub-batang/OFL.txt',join(destination,'KoPub-Batang-OFL.txt'));
 await copyFile('LICENSE','cli/LICENSE');
