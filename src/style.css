@@ -17,10 +17,12 @@ body {
   color: var(--ink);
   background: var(--canvas);
   font-size: 13px;
+  /* Paper 0.1.0 sets keep-all on body; documents keep the previous line breaking so pages and PDFs do not reflow. */
+  word-break: normal;
+  overflow-wrap: normal;
 }
 button,
-input,
-select {
+input {
   font: inherit;
   color: inherit;
 }
@@ -33,18 +35,13 @@ button:disabled {
 }
 button,
 a,
-input,
-select {
+input {
   outline-offset: 3px;
 }
 button:focus-visible,
 a:focus-visible,
-input:focus-visible,
-select:focus-visible {
+input:focus-visible {
   outline: 2px solid var(--pui-color-interaction-focus);
-}
-select[data-pointer-focus]:focus-visible {
-  outline: none;
 }
 button {
   border: 0;
@@ -56,29 +53,10 @@ a {
 svg {
   flex-shrink: 0;
 }
-input,
-select {
+input {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 4px;
-}
-select {
-  height: 30px;
-  padding: 0 25px 0 8px;
-  appearance: none;
-}
-.select-control {
-  position: relative;
-  display: inline-flex;
-  flex-shrink: 0;
-}
-.select-control > svg {
-  position: absolute;
-  right: 7px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--ink);
-  pointer-events: none;
 }
 hr {
   border: 0;
@@ -224,8 +202,7 @@ hr {
   flex-shrink: 0;
 }
 .tool:hover,
-.page-trigger:hover,
-.zoom-select:hover {
+.page-trigger:hover {
   background: var(--pui-color-interaction-bg-hover-on-surface);
   color: var(--ink);
 }
@@ -270,21 +247,14 @@ hr {
   color: var(--quiet);
 }
 .leading-select {
-  width: 66px;
+  width: 84px;
 }
 .zoom-control {
   position: relative;
   width: 88px;
   flex-shrink: 0;
 }
-.zoom-control > svg {
-  position: absolute;
-  right: 7px;
-  top: 9px;
-  pointer-events: none;
-}
-.page-trigger,
-.zoom-select {
+.page-trigger {
   height: 30px;
   padding: 0 7px;
   border: 0;
@@ -293,12 +263,6 @@ hr {
   color: var(--ink);
   font-size: 12px;
   font-weight: 400;
-}
-.zoom-select {
-  width: 100%;
-  padding-right: 25px;
-  appearance: none;
-  cursor: pointer;
 }
 .page-trigger {
   display: flex;
@@ -318,7 +282,7 @@ hr {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 8px 30px var(--pui-color-shadow-overlay);
+  box-shadow: 0 8px 30px var(--pui-color-shadow-floating);
   z-index: 40;
 }
 .dropdown button[role="menuitem"],
@@ -374,23 +338,6 @@ hr {
   font-weight: 600;
   margin: 0;
 }
-.segmented {
-  display: flex;
-  padding: 3px;
-  background: var(--sunken);
-  border-radius: 5px;
-}
-.segmented button {
-  flex: 1;
-  font-size: 12px;
-  padding: 8px 0;
-  border-radius: 3px;
-  color: var(--muted);
-}
-.segmented .is-active {
-  background: var(--white) !important;
-  box-shadow: 0 1px 3px var(--pui-color-shadow-overlay-minimal);
-}
 .option-help {
   font-size: 11px;
   color: var(--quiet);
@@ -404,10 +351,17 @@ hr {
   font-size: 12px;
   color: var(--muted);
   margin: 13px 0;
+  white-space: nowrap;
+  gap: 12px;
 }
-.page-options select {
-  font-size: 11px;
-  max-width: 185px;
+.option-select {
+  flex-shrink: 0;
+}
+.paper-select {
+  width: 172px;
+}
+.orientation-select {
+  width: 96px;
 }
 .unit-field {
   display: flex;
@@ -492,7 +446,7 @@ hr {
   background: var(--white);
   box-shadow:
     0 0 0 1px var(--line),
-    0 3px 7px var(--pui-color-shadow-overlay-minimal);
+    0 3px 7px var(--pui-color-shadow-lifted);
 }
 .page-surfaces {
   position: absolute;
@@ -507,7 +461,7 @@ hr {
   background: var(--white);
   box-shadow:
     0 0 0 1px var(--line),
-    0 3px 7px var(--pui-color-shadow-overlay-minimal);
+    0 3px 7px var(--pui-color-shadow-lifted);
 }
 .page-number {
   position: absolute;
@@ -816,7 +770,7 @@ hr {
   display: flex;
   align-items: center;
   gap: 9px;
-  box-shadow: 0 3px 15px var(--pui-color-shadow-overlay);
+  box-shadow: 0 3px 15px var(--pui-color-shadow-floating);
   border-radius: 6px;
   z-index: 80;
   font-size: 12px;
@@ -834,7 +788,7 @@ hr {
   max-width: 440px;
   width: calc(100% - 32px);
   padding: 25px;
-  box-shadow: 0 10px 50px var(--pui-color-shadow-overlay);
+  box-shadow: 0 10px 50px var(--pui-color-shadow-floating);
   color: var(--ink);
 }
 .document-dialog::backdrop {
@@ -1004,9 +958,6 @@ hr {
   .tool-group {
     flex-shrink: 0;
   }
-  .tool-group select {
-    font-size: 11px;
-  }
   .page-trigger {
     font-size: 11px;
   }
@@ -1107,7 +1058,7 @@ hr {
 .notes-empty h1 { font-family: "Noto Serif KR", serif; color: var(--ink); font-size: 26px; }
 .notes-empty p { margin: 0; }
 .account-modal-backdrop { position: fixed; inset: 0; background: var(--pui-color-overlay-scrim); z-index: 100; display: grid; place-items: center; padding: 20px; }
-.account-modal { position: relative; width: min(100%, 410px); padding: 32px; background: var(--white); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--pui-shape-shadow-overlay); }
+.account-modal { position: relative; width: min(100%, 410px); padding: 32px; background: var(--white); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--pui-layout-shadow-floating-0) var(--pui-color-shadow-floating), var(--pui-layout-shadow-floating-1) var(--pui-color-shadow-floating); }
 .account-modal .wordmark { font-size: 26px; }
 .account-close { position: absolute; top: 14px; right: 14px; }
 .account-modal h1 { font-family: "Noto Serif KR", serif; font-size: 23px; margin: 24px 0 12px; }
@@ -1139,7 +1090,7 @@ hr {
 .library-search { display:flex; align-items:center; gap:9px; border:1px solid var(--line); border-radius:4px; background:var(--white); padding:0 11px; height:36px; color:var(--muted); }
 .library-search input { border:0; background:transparent; outline:none; width:185px; min-width:0; }
 .library-search:focus-within { outline:2px solid var(--pui-color-interaction-focus); outline-offset:2px; }
-.library-sort { height:36px; border:1px solid var(--line); border-radius:4px; padding:0 30px 0 10px; background:var(--white); }
+.library-sort { width:140px; }
 .document-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; }
 .document-card { position:relative; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--white); transition:border-color .15s; }
 .document-card:hover { border-color:var(--quiet); }

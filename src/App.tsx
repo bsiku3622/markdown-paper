@@ -3,9 +3,9 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type SelectHTMLAttributes,
   type ReactNode,
 } from "react";
+import { SegmentControl, Select } from "@studio-baeks/paper-ui";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
@@ -358,7 +358,8 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   }, [dialog]);
   useEffect(() => {
     const close = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest(".menu-anchor")) setMenu(null);
+      // Paper's Select draws its list in a portal outside the menu, so a pick there is not an outside click.
+      if (!(e.target as HTMLElement).closest(".menu-anchor, [role=listbox]")) setMenu(null);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -939,9 +940,10 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
           </Tool>
         </div>
         <div className="tool-group">
-          <SelectControl
+          <Select
             className="block-select"
             aria-label="문단 종류"
+            size="xs"
             value={block}
             onChange={(e) => {
               const v = e.target.value;
@@ -956,21 +958,22 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                   .run();
             }}
           >
-            <option value="p">본문</option>
-            <option value="h1">제목 1</option>
-            <option value="h2">제목 2</option>
-            <option value="h3">제목 3</option>
-            <option value="code">코드 블록</option>
-          </SelectControl>
-          <SelectControl
+            <Select.Option value="p">본문</Select.Option>
+            <Select.Option value="h1">제목 1</Select.Option>
+            <Select.Option value="h2">제목 2</Select.Option>
+            <Select.Option value="h3">제목 3</Select.Option>
+            <Select.Option value="code">코드 블록</Select.Option>
+          </Select>
+          <Select
             aria-label="서체"
+            size="xs"
             className="font-select"
             value={fontValue}
             onChange={(e) => applyFont(e.target.value as Settings["font"])}
           >
-            <option value="myeongjo">명조</option>
-            <option value="sans">고딕</option>
-          </SelectControl>
+            <Select.Option value="myeongjo">명조</Select.Option>
+            <Select.Option value="sans">고딕</Select.Option>
+          </Select>
           <span className="size-field">
             <input
               key={`${sizeValue}-${editor.state.selection.empty}`}
@@ -1070,18 +1073,19 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
           >
             <AlignRight size={16} />
           </Tool>
-          <SelectControl
+          <Select
             aria-label="줄 간격"
+            size="xs"
             className="leading-select"
             value={s.leading}
             onChange={(e) => settings({ leading: Number(e.target.value) })}
           >
             {[1, 1.15, 1.3, 1.5, 1.6, 1.9, 2, 2.5, 3].map((v) => (
-              <option key={v} value={v}>
-                ↕ {v}
-              </option>
+              <Select.Option key={v} value={v}>
+                {`↕ ${v}`}
+              </Select.Option>
             ))}
-          </SelectControl>
+          </Select>
         </div>
         <div className="tool-group">
           <Tool
@@ -1243,22 +1247,21 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                     <X size={15} />
                   </button>
                 </div>
-                <div className="segmented" aria-label="페이지 방식">
-                  <button
-                    aria-pressed={s.mode === "continuous"}
-                    className={s.mode === "continuous" ? "is-active" : ""}
-                    onClick={() => settings({ mode: "continuous" })}
-                  >
+                <SegmentControl
+                  aria-label="페이지 방식"
+                  fullWidth
+                  value={s.mode}
+                  onValueChange={(mode) =>
+                    settings({ mode: mode as Settings["mode"] })
+                  }
+                >
+                  <SegmentControl.Item value="continuous">
                     무한 높이
-                  </button>
-                  <button
-                    aria-pressed={s.mode === "pages"}
-                    className={s.mode === "pages" ? "is-active" : ""}
-                    onClick={() => settings({ mode: "pages" })}
-                  >
+                  </SegmentControl.Item>
+                  <SegmentControl.Item value="pages">
                     페이지 분할
-                  </button>
-                </div>
+                  </SegmentControl.Item>
+                </SegmentControl>
                 <p className="option-help">
                   {s.mode === "continuous"
                     ? "내용과 위아래 여백에 딱 맞는 한 장의 문서입니다."
@@ -1266,18 +1269,20 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 </p>
                 <label>
                   페이지 크기
-                  <SelectControl
+                  <Select
                     aria-label="페이지 크기"
+                    className="option-select paper-select"
+                    size="xs"
                     value={s.paper}
                     onChange={(e) =>
                       settings({ paper: e.target.value as Settings["paper"] })
                     }
                   >
-                    <option value="a4">A4 · 210 × 297 mm</option>
-                    <option value="a5">A5 · 148 × 210 mm</option>
-                    <option value="letter">Letter · 216 × 279 mm</option>
-                    <option value="custom">사용자 지정</option>
-                  </SelectControl>
+                    <Select.Option value="a4">A4 · 210 × 297 mm</Select.Option>
+                    <Select.Option value="a5">A5 · 148 × 210 mm</Select.Option>
+                    <Select.Option value="letter">Letter · 216 × 279 mm</Select.Option>
+                    <Select.Option value="custom">사용자 지정</Select.Option>
+                  </Select>
                 </label>
                 {s.paper === "custom" && (
                   <div className="dimension-fields">
@@ -1330,16 +1335,18 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 )}
                 <label>
                   방향
-                  <SelectControl
+                  <Select
                     aria-label="페이지 방향"
+                    className="option-select orientation-select"
+                    size="xs"
                     value={s.landscape ? "landscape" : "portrait"}
                     onChange={(e) =>
                       settings({ landscape: e.target.value === "landscape" })
                     }
                   >
-                    <option value="portrait">세로</option>
-                    <option value="landscape">가로</option>
-                  </SelectControl>
+                    <Select.Option value="portrait">세로</Select.Option>
+                    <Select.Option value="landscape">가로</Select.Option>
+                  </Select>
                 </label>
                 <label>
                   여백
@@ -1383,10 +1390,10 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
             )}
           </div>
           <span className="zoom-control">
-            <select
+            <Select
               aria-label="화면 배율"
-              className="zoom-select"
-              {...selectFocusProps}
+              size="xs"
+              variant="ghost"
               value={s.zoom}
               onChange={(e) =>
                 settings({
@@ -1395,14 +1402,13 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 })
               }
             >
-              <option value="fit">너비 맞춤</option>
+              <Select.Option value="fit">너비 맞춤</Select.Option>
               {[50, 75, 100, 125, 150, 175, 200].map((v) => (
-                <option key={v} value={v}>
-                  {v}%
-                </option>
+                <Select.Option key={v} value={v}>
+                  {`${v}%`}
+                </Select.Option>
               ))}
-            </select>
-            <ChevronDown size={12} />
+            </Select>
           </span>
         </div>
       </div>
@@ -1609,29 +1615,5 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
         </dialog>
       )}
     </div>
-  );
-}
-
-const selectFocusProps: Pick<
-  SelectHTMLAttributes<HTMLSelectElement>,
-  "onPointerDown" | "onBlur" | "onKeyDown"
-> = {
-  onPointerDown: (event) => {
-    event.currentTarget.dataset.pointerFocus = "true";
-  },
-  onBlur: (event) => {
-    delete event.currentTarget.dataset.pointerFocus;
-  },
-  onKeyDown: (event) => {
-    delete event.currentTarget.dataset.pointerFocus;
-  },
-};
-
-function SelectControl(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <span className="select-control">
-      <select {...props} {...selectFocusProps} />
-      <ChevronDown size={12} aria-hidden="true" />
-    </span>
   );
 }

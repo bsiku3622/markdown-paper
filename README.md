@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown uses the Paper UI palette, Pretendard for Gothic text, and KoPub Batang for both Latin and Korean text in Myeongjo mode. Fonts are bundled, with Noto Serif KR providing fallback glyphs. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown is built on Paper UI (`@studio-baeks/paper-ui`) and uses its palette, Pretendard for Gothic text, and KoPub Batang for both Latin and Korean text in Myeongjo mode. Fonts are bundled, with Noto Serif KR providing fallback glyphs. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
 
 ## Pages and exports
 
@@ -40,7 +40,7 @@ VITE_API_URL=http://localhost:8792 npm run dev
 
 Production runs `paperdown-api.service` on the SSH server, bound to loopback port 8792 and exposed through the existing Cloudflare Tunnel at `paperdown-api.bsiku.dev`. The environment file is `/etc/paperdown-api.env`; account data lives in `/var/lib/paperdown`. Passwords use salted scrypt hashes, sessions use hashed tokens and Secure/HttpOnly cookies, and mutation requests require the exact configured frontend origin. The daily `paperdown-backup.timer` snapshots SQLite and private files into `/var/backups/paperdown`. Backups currently remain on the same server and have no automatic retention policy. Unit and backup templates are in `deploy/`.
 
-Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is vendored so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
+Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is installed from the release tarball in `vendor/`, so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
 
 ## Document navigation
 
@@ -68,4 +68,4 @@ Run native PDF regression checks with `PAPERDOWN_PDF_TEST_DIR=/absolute/test-out
 
 ## License
 
-MIT © Jaewon Baek. Vendored Paper UI retains its MIT license. Pretendard, KoPub Batang, and Noto Serif KR retain their respective SIL Open Font Licenses.
+MIT © Jaewon Baek. Paper UI is MIT licensed. Pretendard, KoPub Batang, and Noto Serif KR retain their respective SIL Open Font Licenses.
