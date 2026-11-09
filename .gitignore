@@ -12,3 +12,5 @@ cli/*.tgz
 
 # local work log
 logs.md
+AGENTS.md
+CLAUDE.md
