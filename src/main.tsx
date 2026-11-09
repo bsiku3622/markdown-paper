@@ -9,4 +9,4 @@ import '@fontsource/noto-serif-kr/600.css';
 import 'katex/dist/katex.min.css';
 import './style.css';
 import App from './App';
-createRoot(document.getElementById('root')!).render(<React.StrictMode><PaperProvider defaultTheme="light"><App/></PaperProvider></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><PaperProvider defaultTheme="light" controlShape="small"><App/></PaperProvider></React.StrictMode>);

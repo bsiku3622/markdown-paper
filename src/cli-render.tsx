@@ -30,7 +30,7 @@ declare global {
     renderPaperdown: (document: DocumentData) => Promise<{pages:number;width:number;height:number}>;
   }
 }
-flushSync(()=>createRoot(document.getElementById('root')!).render(<PaperProvider defaultTheme="light"><div id="paperdown-render"/></PaperProvider>));
+flushSync(()=>createRoot(document.getElementById('root')!).render(<PaperProvider defaultTheme="light" controlShape="small"><div id="paperdown-render"/></PaperProvider>));
 window.renderPaperdown=async value=> {
   const doc=normalize(value), s=doc.settings, dim=dimensions(s), px=96/25.4;
   const host=document.getElementById('paperdown-render')!;

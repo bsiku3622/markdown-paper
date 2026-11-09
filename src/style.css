@@ -56,6 +56,28 @@
   flex: 1;
   min-width: 0;
 }
+.note-row {
+  position: relative;
+}
+.note-select {
+  padding-inline-end: calc(var(--pui-shape-control-height-xs) + var(--pui-shape-space-md));
+}
+.note-delete {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--pui-shape-space-sm);
+  margin-block: auto;
+  opacity: 0;
+}
+.note-row:hover .note-delete,
+.note-row:focus-within .note-delete {
+  opacity: 1;
+}
+@media (hover: none) {
+  .note-delete {
+    opacity: 1;
+  }
+}
 .notes-sidebar {
   width: var(--pui-shape-dimension-width-lg);
   flex-shrink: 0;

@@ -113,7 +113,7 @@ const TableItem = ({ label, run }: { label: string; run: () => void }) => (
   </Button>
 );
 const ExportRow = ({ glyph, title, hint, tag, run }: { glyph: GlyphName; title: string; hint: string; tag?: string; run: () => void }) => (
-  <Button as={Floating.Close} variant="ghost" size="lg" fullWidth justify="between" onClick={run}>
+  <Button as={Floating.Close} variant="ghost" size="xl" fullWidth justify="between" onClick={run}>
     <Inline as="span" gap="md" align="center" minWidth={0}>
       <Glyph name={glyph} />
       <Stack as="span" align="start" minWidth={0}>
@@ -814,7 +814,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   const mm = (value: string, min: number, max: number) => Math.max(min, Math.min(max, Number(value)));
   return (
     <div className="app" style={style}>
-      <Surface as="header" fill="raised" border="bottom" paddingX={phone ? "md" : "xl"} paddingY="lg">
+      <Surface as="header" fill="raised" border="bottom" paddingX={phone ? "md" : "xl"} paddingY="sm">
         <Grid columns={phone ? "auto minmax(0, 1fr) auto" : "auto auto minmax(0, 1fr) auto"} gap={phone ? "sm" : "lg"} align="stretch">
           <Inline align="center">
             <Brand onHome={account.home} />
@@ -824,7 +824,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
             <Box width="full" maxWidth="xl" minWidth={0}>
               <Field
                 variant="ghost"
-                size={phone ? "xs" : "sm"}
+                size="xs"
                 aria-label="문서 이름"
                 placeholder="새로운 문서"
                 value={doc.title}
@@ -841,30 +841,30 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
           <Inline align="center" gap={phone ? "xs" : "sm"}>
             {account.accountButton}
             <Box hideBelow="md">
-              <IconButton variant="ghost" size="sm" aria-label="새 문서" title="새 문서" onClick={() => (account.upload ? account.create() : openDialog({ kind: "new" }))}>
+              <IconButton variant="ghost" size="xs" aria-label="새 문서" title="새 문서" onClick={() => (account.upload ? account.create() : openDialog({ kind: "new" }))}>
                 <Glyph name="file-plus-2" ink="secondary" />
               </IconButton>
             </Box>
-            <IconButton variant="ghost" size="sm" aria-label="문서 열기" title="문서 열기" onClick={() => importRef.current?.click()}>
+            <IconButton variant="ghost" size="xs" aria-label="문서 열기" title="문서 열기" onClick={() => importRef.current?.click()}>
               <Glyph name="folder-open" ink="secondary" />
             </IconButton>
             <Inline align="stretch" gap="sm">
               <Box hideBelow="md"><Divider orientation="vertical" /></Box>
               <Box hideBelow="md">
-                <Button variant="hairline" size="sm" disabled={!!busy} onClick={() => void exportImage(true)}>
+                <Button variant="hairline" size="xs" disabled={!!busy} onClick={() => void exportImage(true)}>
                   <Glyph name="copy" />
                   이미지 복사
                 </Button>
               </Box>
             </Inline>
             <Floating>
-              <Button as={Floating.Trigger} size="sm" disabled={!!busy} aria-label={busy || "내보내기"}>
+              <Button as={Floating.Trigger} size="xs" disabled={!!busy} aria-label={busy || "내보내기"}>
                 {busy ? <Spinner size="inline" ink="inherit" decorative /> : <Glyph name="download" />}
                 <Box as="span" hideBelow="md">{busy || "내보내기"}</Box>
                 <Glyph name="chevron-down" />
               </Button>
-              <Floating.Content as={Surface} fill="raised" radius="md" padding="xs" placement="bottom end" width="xl" maxWidth="full" aria-label="내보내기">
-                <Stack gap="xs">
+              <Floating.Content as={Surface} fill="raised" radius="md" padding="sm" placement="bottom end" width="xl" maxWidth="full" aria-label="내보내기">
+                <Stack gap="md">
                   <Box paddingX="md" paddingY="sm">
                     <Text as="span" variant="label" strong={false} ink="tertiary">완성한 문서를 남기는 방법</Text>
                   </Box>
@@ -905,7 +905,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
           </Inline>
         </Surface>
       )}
-      <Surface as="div" role="toolbar" aria-label="문서 도구 모음" fill="raised" border="bottom" elevation="sticky" top="none" paddingX="xl" paddingY="md">
+      <Surface as="div" role="toolbar" aria-label="문서 도구 모음" fill="raised" border="bottom" elevation="sticky" top="none" paddingX="xl" paddingY="sm">
         <Box overflowX={phone ? "auto" : undefined}>
           <Inline justify="between" align="center" gap="md" wrap={!phone} minWidth={phone ? "max-content" : undefined}>
             <Inline align="stretch" gap="sm" wrap={!phone}>

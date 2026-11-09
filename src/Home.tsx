@@ -26,7 +26,7 @@ const Card = ({ note, working, open, remove }: { note: NoteSummary; working: boo
     <Surface as="article" fill="raised" border radius="md" overflow="hidden">
       <Stack>
         <Surface as="a" href={documentPath(note.id)} aria-label={`${title} 열기`} padding="lg" hoverable className="plain-link" onClick={plainClick(() => !working && open())}>
-          <Surface fill="canvas" border radius="sm" padding="lg" height="md" overflow="hidden">
+          <Surface fill="raised" border radius="sm" padding="lg" height="md" overflow="hidden">
             <Stack gap="md">
               <Glyph name="file-text" size="subheading" ink="secondary" />
               <Serif variant="lead" lines>{title}</Serif>

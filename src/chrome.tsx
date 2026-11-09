@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
-import { Badge, Box, Inline, Stack, Surface, Text } from "@studio-baeks/paper-ui";
+import { Badge, Box, Inline, Link, Stack, Text } from "@studio-baeks/paper-ui";
 import type { Ink, TextVariant } from "@studio-baeks/paper-ui/tokens";
 import { Glyph } from "./glyphs";
 import { useMedia } from "./hooks";
@@ -34,12 +34,12 @@ export const Serif = ({ as = "span", variant = "body", strong, ink, lines = fals
 export const Brand = ({ onHome }: { onHome?: () => void }) => {
   const phone = useMedia("(max-width: 767px)");
   return (
-    <Surface as="a" href="/" aria-label="Paperdown 홈" radius="sm" hoverable className="plain-link" onClick={onHome ? plainClick(onHome) : undefined}>
-      <Inline gap="sm" align="center">
+    <Link href="/" aria-label="Paperdown 홈" underline="hover" className="plain-link" onClick={onHome ? plainClick(onHome) : undefined}>
+      <Inline as="span" gap="sm" align="center">
         {phone ? null : <Glyph name="file-text" size="subheading" />}
         <Wordmark small={phone} />
       </Inline>
-    </Surface>
+    </Link>
   );
 };
 
