@@ -40,7 +40,7 @@ VITE_API_URL=http://localhost:8792 npm run dev
 
 Production runs `paperdown-api.service` on the SSH server, bound to loopback port 8792 and exposed through the existing Cloudflare Tunnel at `paperdown-api.bsiku.dev`. The environment file is `/etc/paperdown-api.env`; account data lives in `/var/lib/paperdown`. Passwords use salted scrypt hashes, sessions use hashed tokens and Secure/HttpOnly cookies, and mutation requests require the exact configured frontend origin. The daily `paperdown-backup.timer` snapshots SQLite and private files into `/var/backups/paperdown`. Backups currently remain on the same server and have no automatic retention policy. Unit and backup templates are in `deploy/`.
 
-Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is installed from the release tarball in `vendor/`, so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
+Vercel uses the Vite preset, `npm run build`, and `dist`. Paper UI is installed from the npm registry, so deployment does not depend on a sibling checkout. Both domains use the DNS-only Cloudflare CNAME `66ced14c5a41ace9.vercel-dns-017.com`.
 
 ## Document navigation
 

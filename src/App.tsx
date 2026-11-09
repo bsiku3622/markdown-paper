@@ -3,9 +3,30 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type FormEvent,
+  type MouseEvent,
   type ReactNode,
 } from "react";
-import { SegmentControl, Select } from "@studio-baeks/paper-ui";
+import {
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Field,
+  Floating,
+  FormField,
+  Grid,
+  IconButton,
+  Inline,
+  Portal,
+  SegmentControl,
+  Select,
+  Selectable,
+  Spinner,
+  Stack,
+  Surface,
+  Text,
+} from "@studio-baeks/paper-ui";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
@@ -18,38 +39,9 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Mathematics from "@tiptap/extension-mathematics";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import Highlight from "@tiptap/extension-highlight";
-import {
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Bold,
-  Italic,
-  Strikethrough,
-  Highlighter,
-  Code2,
-  List,
-  ListOrdered,
-  ListTodo,
-  Quote,
-  Link,
-  ImagePlus,
-  Table2,
-  Sigma,
-  Undo2,
-  Redo2,
-  FilePlus2,
-  FolderOpen,
-  Copy,
-  Download,
-  ChevronDown,
-  X,
-  Check,
-  Settings2,
-  PanelTop,
-  ArrowUpRight,
-  FileText,
-  Minus,
-} from "lucide-react";
+import { Glyph, type GlyphName } from "./glyphs";
+import { Brand } from "./chrome";
+import { useMedia } from "./hooks";
 import {
   FONTS,
   dimensions,
@@ -77,34 +69,77 @@ type Dialog = {
   position?: number;
   inline?: boolean;
 };
+const DIALOG_TITLES: Record<Dialog["kind"], string> = {
+  new: "새 문서를 시작할까요?",
+  link: "링크 편집",
+  math: "LaTeX 수식",
+  import: "문서 열기",
+  transfer: "문서를 Paperdown으로 옮기기",
+};
 function Tool({
   label,
-  children,
-  active = false,
+  glyph,
+  active,
   disabled = false,
   onClick,
 }: {
   label: string;
-  children: ReactNode;
+  glyph: GlyphName;
   active?: boolean;
   disabled?: boolean;
   onClick: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      className={`tool ${active ? "is-active" : ""}`}
-      title={label}
-      aria-label={label}
-      aria-pressed={active}
-      disabled={disabled}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-    >
-      {children}
-    </button>
+  const icon = <Glyph name={glyph} ink={active ? "primary" : "secondary"} />;
+  const common = {
+    size: "xs" as const,
+    variant: "ghost" as const,
+    title: label,
+    "aria-label": label,
+    disabled,
+    onMouseDown: (e: MouseEvent) => e.preventDefault(),
+    onClick,
+  };
+  return active === undefined ? (
+    <IconButton {...common}>{icon}</IconButton>
+  ) : (
+    <IconButton as={Selectable} selected={active} {...common}>
+      {icon}
+    </IconButton>
   );
 }
+const TableItem = ({ label, run }: { label: string; run: () => void }) => (
+  <Button as={Floating.Close} variant="ghost" size="sm" fontSize="body" fullWidth justify="start" onMouseDown={(e: MouseEvent) => e.preventDefault()} onClick={run}>
+    {label}
+  </Button>
+);
+const ExportRow = ({ glyph, title, hint, tag, run }: { glyph: GlyphName; title: string; hint: string; tag?: string; run: () => void }) => (
+  <Button as={Floating.Close} variant="ghost" size="lg" fullWidth justify="between" onClick={run}>
+    <Inline as="span" gap="md" align="center" minWidth={0}>
+      <Glyph name={glyph} />
+      <Stack as="span" align="start" minWidth={0}>
+        <Text as="span" ink="inherit">{title}</Text>
+        <Text as="span" variant="label" strong={false} ink="tertiary" truncate>{hint}</Text>
+      </Stack>
+    </Inline>
+    {tag ? <Text as="span" variant="label" strong={false} ink="tertiary">{tag}</Text> : null}
+  </Button>
+);
+const OptionRow = ({ label, children }: { label: string; children: ReactNode }) => (
+  <Inline justify="between" align="center" gap="md">
+    <Text as="span" variant="caption" ink="secondary">{label}</Text>
+    {children}
+  </Inline>
+);
+const Quiet = ({ children }: { children: ReactNode }) => (
+  <Text as="span" variant="label" strong={false} ink="tertiary">{children}</Text>
+);
+const Count = ({ value, unit, of }: { value: number; unit: string; of?: string }) => (
+  <Inline as="span" gap="xs" align="baseline">
+    <Text as="span" variant="label" strong={false} ink="secondary" numeric>{value.toLocaleString()}</Text>
+    <Quiet>{unit}</Quiet>
+    {of ? <Quiet>{of}</Quiet> : null}
+  </Inline>
+);
 export default function App() {
   const [loaded, setLoaded] = useState<DocumentData | null>(null);
   useEffect(() => {
@@ -130,7 +165,6 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     [saved, setSaved] = useState(true),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(""),
-    [menu, setMenu] = useState<"export" | "pages" | "table" | null>(null),
     [dialog, setDialog] = useState<Dialog | null>(null),
     [dialogValue, setDialogValue] = useState(""),
     [pages, setPages] = useState(1),
@@ -148,8 +182,9 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   const importRef = useRef<HTMLInputElement>(null),
     imageRef = useRef<HTMLInputElement>(null),
     stageRef = useRef<HTMLDivElement>(null),
-    pageButtonRef = useRef<HTMLButtonElement>(null),
-    dialogRef = useRef<HTMLDialogElement>(null),
+    slashAnchor = useRef<HTMLSpanElement>(null),
+    dialogField = useRef<HTMLInputElement>(null),
+    lastDialog = useRef<Dialog | null>(null),
     docRef = useRef(doc),
     accountRef = useRef(account),
     saveSequence = useRef(Promise.resolve()),
@@ -173,9 +208,9 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     margin: s.margin * px,
     gap: 24,
   };
+  const phone = useMedia("(max-width: 767px)");
   const flash = (msg: string) => setNotice(msg);
   function openDialog(d: Dialog) {
-    setMenu(null);
     setDialogValue(d.value || "");
     setDialog(d);
   }
@@ -351,29 +386,13 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     document.title = `${doc.title || "새로운 문서"} — Paperdown`;
   }, [doc.title]);
   useEffect(() => {
-    if (dialog) {
-      dialogRef.current?.showModal();
-      return () => dialogRef.current?.close();
-    }
-  }, [dialog]);
-  useEffect(() => {
-    const close = (e: MouseEvent) => {
-      // Paper's Select draws its list in a portal outside the menu, so a pick there is not an outside click.
-      if (!(e.target as HTMLElement).closest(".menu-anchor, [role=listbox]")) setMenu(null);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-  useEffect(() => {
     const keys = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         downloadDocument();
       }
       if (e.key === "Escape") {
-        setMenu(null);
         setSlash(null);
-        setDialog(null);
       }
     };
     window.addEventListener("keydown", keys);
@@ -446,7 +465,6 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
       const portable = await portableDocument(snapshot);
       saveFile(new Blob([JSON.stringify(portable, null, 2)], {type: "application/json"}),
         `${(snapshot.title.trim() || "새로운 문서").replace(/[\\/:*?"<>|]/g, "-")}.paperdown.json`);
-      setMenu(null);
       flash("서식과 이미지를 포함한 문서를 저장했습니다.");
       return true;
     } catch (e) {
@@ -537,7 +555,6 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   }
   async function exportImage(copy: boolean) {
     if (!editor) return;
-    setMenu(null);
     setBusy(copy ? "이미지 복사 중" : "PNG 저장 중");
     try {
       const canCopy =
@@ -566,7 +583,6 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   }
   async function exportPdf() {
     if (!editor) return;
-    setMenu(null);
     setBusy("PDF 만드는 중");
     try {
       await pdf(editor.view.dom, s, pages, filename);
@@ -791,653 +807,328 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     }
   }
   if (!editor) return null;
+  const isSaved = account.saveLabel ? account.saveLabel === "계정에 저장됨" : saved;
+  const shownDialog = dialog || lastDialog.current;
+  if (dialog) lastDialog.current = dialog;
+  const withField = shownDialog?.kind === "link" || shownDialog?.kind === "math";
+  const mm = (value: string, min: number, max: number) => Math.max(min, Math.min(max, Number(value)));
   return (
     <div className="app" style={style}>
-      <header className="app-header">
-        <a className="brand" href="/" aria-label="Paperdown 홈" onClick={e=>{if(!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){e.preventDefault();account.home();}}}>
-          <span className="brand-symbol">
-            <FileText size={21} strokeWidth={1.5} />
-          </span>
-          <span className="wordmark">Paperdown</span>
-        </a>
-        <span className="header-divider" />
-        <div className="identity">
-          <input
-            aria-label="문서 이름"
-            value={doc.title}
-            placeholder="새로운 문서"
-            onChange={(e) =>
-              setDoc((d) => ({
-                ...d,
-                title: e.target.value,
-                updatedAt: Date.now(),
-              }))
-            }
-          />
-          <span className="save-state">
-            <span className={(account.saveLabel ? account.saveLabel === "계정에 저장됨" : saved) ? "saved-dot" : "saved-dot pending"} />
-            {account.saveLabel || (saved ? "이 기기에 저장됨" : "저장 중")}
-          </span>
-        </div>
-        <div className="header-actions">
-          {account.accountButton}
-          <Tool label="새 문서" onClick={() => account.upload ? account.create() : openDialog({ kind: "new" })}>
-            <FilePlus2 size={17} />
-          </Tool>
-          <Tool label="문서 열기" onClick={() => importRef.current?.click()}>
-            <FolderOpen size={17} />
-          </Tool>
-          <span className="header-divider" />
-          <button
-            className="action-button image-copy"
-            disabled={!!busy}
-            onClick={() => void exportImage(true)}
-          >
-            <Copy size={15} />
-            <span>이미지 복사</span>
-          </button>
-          <div className="menu-anchor">
-            <button
-              className="action-button primary"
-              aria-haspopup="menu"
-              aria-expanded={menu === "export"}
-              disabled={!!busy}
-              onClick={() => setMenu(menu === "export" ? null : "export")}
+      <Surface as="header" fill="raised" border="bottom" paddingX={phone ? "md" : "xl"} paddingY="lg">
+        <Grid columns={phone ? "auto minmax(0, 1fr) auto" : "auto auto minmax(0, 1fr) auto"} gap={phone ? "sm" : "lg"} align="stretch">
+          <Inline align="center">
+            <Brand onHome={account.home} />
+          </Inline>
+          {phone ? null : <Divider orientation="vertical" />}
+          <Inline align="center" gap="md" minWidth={0}>
+            <Box width="full" maxWidth="xl" minWidth={0}>
+              <Field
+                variant="ghost"
+                size={phone ? "xs" : "sm"}
+                aria-label="문서 이름"
+                placeholder="새로운 문서"
+                value={doc.title}
+                onChange={(e) => setDoc((d) => ({ ...d, title: e.target.value, updatedAt: Date.now() }))}
+              />
+            </Box>
+            <Box hideBelow="lg">
+              <Inline gap="xs" align="center" aria-live="polite">
+                <Badge dot size="xs" variant="ghost" accent={isSaved ? "primary" : "warning"} aria-label="" />
+                <Text as="span" variant="label" strong={false} ink="tertiary">{account.saveLabel || (saved ? "이 기기에 저장됨" : "저장 중")}</Text>
+              </Inline>
+            </Box>
+          </Inline>
+          <Inline align="center" gap={phone ? "xs" : "sm"}>
+            {account.accountButton}
+            <Box hideBelow="md">
+              <IconButton variant="ghost" size="sm" aria-label="새 문서" title="새 문서" onClick={() => (account.upload ? account.create() : openDialog({ kind: "new" }))}>
+                <Glyph name="file-plus-2" ink="secondary" />
+              </IconButton>
+            </Box>
+            <IconButton variant="ghost" size="sm" aria-label="문서 열기" title="문서 열기" onClick={() => importRef.current?.click()}>
+              <Glyph name="folder-open" ink="secondary" />
+            </IconButton>
+            <Inline align="stretch" gap="sm">
+              <Box hideBelow="md"><Divider orientation="vertical" /></Box>
+              <Box hideBelow="md">
+                <Button variant="hairline" size="sm" disabled={!!busy} onClick={() => void exportImage(true)}>
+                  <Glyph name="copy" />
+                  이미지 복사
+                </Button>
+              </Box>
+            </Inline>
+            <Floating>
+              <Button as={Floating.Trigger} size="sm" disabled={!!busy} aria-label={busy || "내보내기"}>
+                {busy ? <Spinner size="inline" ink="inherit" decorative /> : <Glyph name="download" />}
+                <Box as="span" hideBelow="md">{busy || "내보내기"}</Box>
+                <Glyph name="chevron-down" />
+              </Button>
+              <Floating.Content as={Surface} fill="raised" radius="md" padding="xs" placement="bottom end" width="xl" maxWidth="full" aria-label="내보내기">
+                <Stack gap="xs">
+                  <Box paddingX="md" paddingY="sm">
+                    <Text as="span" variant="label" strong={false} ink="tertiary">완성한 문서를 남기는 방법</Text>
+                  </Box>
+                  <ExportRow glyph="file-text" title="PDF로 저장" hint={s.mode === "pages" ? `${pages}페이지 · 선택·검색 가능한 텍스트` : "한 장의 긴 문서 · 현재 높이"} tag="PDF" run={() => void exportPdf()} />
+                  <ExportRow glyph="image-plus" title="PNG 이미지" hint="현재 문서 전체를 선명하게" tag="PNG" run={() => void exportImage(false)} />
+                  <Divider />
+                  <ExportRow glyph="panel-top" title="Paperdown 문서" hint="서식 · 표 · 이미지 보존" run={() => void downloadDocument()} />
+                  <ExportRow
+                    glyph="code-xml"
+                    title="Markdown 원본"
+                    hint="선택 서식과 정렬은 포함되지 않습니다"
+                    tag="MD"
+                    run={() => saveFile(new Blob([editor.getMarkdown()], { type: "text/markdown;charset=utf-8" }), `${filename}.md`)}
+                  />
+                </Stack>
+              </Floating.Content>
+            </Floating>
+          </Inline>
+        </Grid>
+      </Surface>
+      {location.origin === OLD_ORIGIN && (
+        <Surface fill="sunken" border="bottom" paddingX="xl" paddingY="sm">
+          <Inline justify="center" align="center" gap="xl" wrap>
+            <Text as="span" variant="label" strong={false} ink="secondary">
+              여백이 <Text as="strong" variant="label" ink="inherit">Paperdown</Text>으로 새로워졌습니다.
+            </Text>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => {
+                transferWindow.current = window.open(`${NEW_ORIGIN}/#transfer`, "_blank");
+                if (!transferWindow.current) flash("팝업을 허용하거나 문서 파일로 저장한 뒤 새 주소에서 열어주세요.");
+              }}
             >
-              <Download size={15} />
-              <span>{busy || "내보내기"}</span>
-              <ChevronDown size={13} />
-            </button>
-            {menu === "export" && (
-              <div className="dropdown export-menu" role="menu">
-                <p className="menu-caption">완성한 문서를 남기는 방법</p>
-                <button role="menuitem" onClick={() => void exportPdf()}>
-                  <FileText size={18} />
-                  <span>
-                    PDF로 저장
-                    <small>
-                      {s.mode === "pages"
-                        ? `${pages}페이지 · 선택·검색 가능한 텍스트`
-                        : "한 장의 긴 문서 · 현재 높이"}
-                    </small>
-                  </span>
-                  <span className="file-tag">PDF</span>
-                </button>
-                <button role="menuitem" onClick={() => void exportImage(false)}>
-                  <ImagePlus size={18} />
-                  <span>
-                    PNG 이미지<small>현재 문서 전체를 선명하게</small>
-                  </span>
-                  <span className="file-tag">PNG</span>
-                </button>
-                <hr />
-                <button role="menuitem" onClick={downloadDocument}>
-                  <PanelTop size={18} />
-                  <span>
-                    Paperdown 문서<small>서식 · 표 · 이미지 보존</small>
-                  </span>
-                </button>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    saveFile(
-                      new Blob([editor.getMarkdown()], {
-                        type: "text/markdown;charset=utf-8",
-                      }),
-                      `${filename}.md`,
-                    );
-                    setMenu(null);
+              현재 문서와 함께 새 주소로 이동
+              <Glyph name="arrow-up-right" />
+            </Button>
+          </Inline>
+        </Surface>
+      )}
+      <Surface as="div" role="toolbar" aria-label="문서 도구 모음" fill="raised" border="bottom" elevation="sticky" top="none" paddingX="xl" paddingY="md">
+        <Box overflowX={phone ? "auto" : undefined}>
+          <Inline justify="between" align="center" gap="md" wrap={!phone} minWidth={phone ? "max-content" : undefined}>
+            <Inline align="stretch" gap="sm" wrap={!phone}>
+              <Inline gap="xs" align="center">
+                <Tool label="실행 취소 (⌘Z)" glyph="undo-2" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
+                <Tool label="다시 실행 (⇧⌘Z)" glyph="redo-2" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />
+              </Inline>
+              <Divider orientation="vertical" />
+              <Inline gap="xs" align="center">
+                <Select
+                  aria-label="문단 종류"
+                  size="xs"
+                  value={block}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "p") editor.chain().focus().setParagraph().run();
+                    else if (v === "code") editor.chain().focus().toggleCodeBlock().run();
+                    else editor.chain().focus().toggleHeading({ level: Number(v[1]) as 1 | 2 | 3 }).run();
                   }}
                 >
-                  <Code2 size={18} />
-                  <span>
-                    Markdown 원본
-                    <small>선택 서식과 정렬은 포함되지 않습니다</small>
-                  </span>
-                  <span className="file-tag">MD</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-      {location.origin === OLD_ORIGIN && (
-        <div className="migration">
-          <span>
-            여백이 <strong>Paperdown</strong>으로 새로워졌습니다.
-          </span>
-          <button
-            onClick={() => {
-              transferWindow.current = window.open(
-                `${NEW_ORIGIN}/#transfer`,
-                "_blank",
-              );
-              if (!transferWindow.current)
-                flash(
-                  "팝업을 허용하거나 문서 파일로 저장한 뒤 새 주소에서 열어주세요.",
-                );
-            }}
-          >
-            현재 문서와 함께 새 주소로 이동 <ArrowUpRight size={14} />
-          </button>
-        </div>
-      )}
-      <div className="toolbar" role="toolbar" aria-label="문서 도구 모음">
-        <div className="tool-group">
-          <Tool
-            label="실행 취소 (⌘Z)"
-            disabled={!editor.can().undo()}
-            onClick={() => editor.chain().focus().undo().run()}
-          >
-            <Undo2 size={16} />
-          </Tool>
-          <Tool
-            label="다시 실행 (⇧⌘Z)"
-            disabled={!editor.can().redo()}
-            onClick={() => editor.chain().focus().redo().run()}
-          >
-            <Redo2 size={16} />
-          </Tool>
-        </div>
-        <div className="tool-group">
-          <Select
-            className="block-select"
-            aria-label="문단 종류"
-            size="xs"
-            value={block}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "p") editor.chain().focus().setParagraph().run();
-              else if (v === "code")
-                editor.chain().focus().toggleCodeBlock().run();
-              else
-                editor
-                  .chain()
-                  .focus()
-                  .toggleHeading({ level: Number(v[1]) as 1 | 2 | 3 })
-                  .run();
-            }}
-          >
-            <Select.Option value="p">본문</Select.Option>
-            <Select.Option value="h1">제목 1</Select.Option>
-            <Select.Option value="h2">제목 2</Select.Option>
-            <Select.Option value="h3">제목 3</Select.Option>
-            <Select.Option value="code">코드 블록</Select.Option>
-          </Select>
-          <Select
-            aria-label="서체"
-            size="xs"
-            className="font-select"
-            value={fontValue}
-            onChange={(e) => applyFont(e.target.value as Settings["font"])}
-          >
-            <Select.Option value="myeongjo">명조</Select.Option>
-            <Select.Option value="sans">고딕</Select.Option>
-          </Select>
-          <span className="size-field">
-            <input
-              key={`${sizeValue}-${editor.state.selection.empty}`}
-              aria-label="글자 크기"
-              type="number"
-              min="6"
-              max="96"
-              step=".5"
-              defaultValue={sizeValue}
-              onBlur={(e) => {
-                if (e.currentTarget.value !== sizeValue)
-                  applySize(e.currentTarget.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
-              list="font-sizes"
-            />
-            <span>pt</span>
-          </span>
-          <datalist id="font-sizes">
-            {[
-              6, 8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72, 96,
-            ].map((v) => (
-              <option key={v} value={v} />
-            ))}
-          </datalist>
-        </div>
-        <div className="tool-group">
-          <Tool
-            label="굵게 (⌘B)"
-            active={editor.isActive("bold")}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
-            <Bold size={16} />
-          </Tool>
-          <Tool
-            label="기울임 (⌘I)"
-            active={editor.isActive("italic")}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          >
-            <Italic size={16} />
-          </Tool>
-          <Tool
-            label="취소선"
-            active={editor.isActive("strike")}
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-          >
-            <Strikethrough size={16} />
-          </Tool>
-          <Tool
-            label="강조"
-            active={editor.isActive("highlight")}
-            onClick={() => editor.chain().focus().toggleHighlight().run()}
-          >
-            <Highlighter size={16} />
-          </Tool>
-          <Tool
-            label="인라인 코드"
-            active={editor.isActive("code")}
-            onClick={() => editor.chain().focus().toggleCode().run()}
-          >
-            <Code2 size={16} />
-          </Tool>
-          <Tool
-            label="링크"
-            active={editor.isActive("link")}
-            onClick={() =>
-              openDialog({
-                kind: "link",
-                value: editor.getAttributes("link").href || "",
-              })
-            }
-          >
-            <Link size={16} />
-          </Tool>
-        </div>
-        <div className="tool-group">
-          <Tool
-            label="왼쪽 정렬"
-            active={editor.isActive({ textAlign: "left" })}
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-          >
-            <AlignLeft size={16} />
-          </Tool>
-          <Tool
-            label="가운데 정렬"
-            active={editor.isActive({ textAlign: "center" })}
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-          >
-            <AlignCenter size={16} />
-          </Tool>
-          <Tool
-            label="오른쪽 정렬"
-            active={editor.isActive({ textAlign: "right" })}
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-          >
-            <AlignRight size={16} />
-          </Tool>
-          <Select
-            aria-label="줄 간격"
-            size="xs"
-            className="leading-select"
-            value={s.leading}
-            onChange={(e) => settings({ leading: Number(e.target.value) })}
-          >
-            {[1, 1.15, 1.3, 1.5, 1.6, 1.9, 2, 2.5, 3].map((v) => (
-              <Select.Option key={v} value={v}>
-                {`↕ ${v}`}
-              </Select.Option>
-            ))}
-          </Select>
-        </div>
-        <div className="tool-group">
-          <Tool
-            label="글머리 목록"
-            active={editor.isActive("bulletList")}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          >
-            <List size={17} />
-          </Tool>
-          <Tool
-            label="번호 목록"
-            active={editor.isActive("orderedList")}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          >
-            <ListOrdered size={17} />
-          </Tool>
-          <Tool
-            label="체크리스트"
-            active={editor.isActive("taskList")}
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-          >
-            <ListTodo size={17} />
-          </Tool>
-          <Tool
-            label="인용"
-            active={editor.isActive("blockquote")}
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          >
-            <Quote size={16} />
-          </Tool>
-        </div>
-        <div className="tool-group">
-          <Tool label="이미지 넣기" onClick={() => imageRef.current?.click()}>
-            <ImagePlus size={17} />
-          </Tool>
-          <div className="menu-anchor">
-            <Tool
-              label="표"
-              active={editor.isActive("table")}
-              onClick={() => setMenu(menu === "table" ? null : "table")}
-            >
-              <Table2 size={16} />
-            </Tool>
-            {menu === "table" && (
-              <div className="dropdown table-menu" role="menu">
-                {editor.isActive("table") ? (
-                  <>
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        editor.chain().focus().addRowAfter().run();
-                        setMenu(null);
-                      }}
-                    >
-                      아래에 행 추가
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        editor.chain().focus().addColumnAfter().run();
-                        setMenu(null);
-                      }}
-                    >
-                      오른쪽에 열 추가
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        editor.chain().focus().deleteRow().run();
-                        setMenu(null);
-                      }}
-                    >
-                      선택 행 삭제
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        editor.chain().focus().deleteColumn().run();
-                        setMenu(null);
-                      }}
-                    >
-                      선택 열 삭제
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        editor.chain().focus().deleteTable().run();
-                        setMenu(null);
-                      }}
-                    >
-                      표 삭제
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      editor
-                        .chain()
-                        .focus()
-                        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-                        .run();
-                      setMenu(null);
+                  <Select.Option value="p">본문</Select.Option>
+                  <Select.Option value="h1">제목 1</Select.Option>
+                  <Select.Option value="h2">제목 2</Select.Option>
+                  <Select.Option value="h3">제목 3</Select.Option>
+                  <Select.Option value="code">코드 블록</Select.Option>
+                </Select>
+                <Select aria-label="서체" size="xs" value={fontValue} onChange={(e) => applyFont(e.target.value as Settings["font"])}>
+                  <Select.Option value="myeongjo">명조</Select.Option>
+                  <Select.Option value="sans">고딕</Select.Option>
+                </Select>
+                <Box width="sm">
+                  <Field
+                    key={`${sizeValue}-${editor.state.selection.empty}`}
+                    size="xs"
+                    type="number"
+                    numeric
+                    aria-label="글자 크기"
+                    min="6"
+                    max="96"
+                    step=".5"
+                    defaultValue={sizeValue}
+                    list="font-sizes"
+                    trailing={<Text as="span" variant="caption" ink="tertiary">pt</Text>}
+                    onBlur={(e) => {
+                      if (e.currentTarget.value !== sizeValue) applySize(e.currentTarget.value);
                     }}
-                  >
-                    3 × 3 표 넣기
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          <Tool label="수식 넣기" onClick={() => openDialog({ kind: "math" })}>
-            <Sigma size={16} />
-          </Tool>
-          <Tool
-            label="구분선"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          >
-            <Minus size={16} />
-          </Tool>
-        </div>
-        <div className="tool-group page-group">
-          <div className="menu-anchor">
-            <button
-              ref={pageButtonRef}
-              className={`page-trigger ${menu === "pages" ? "is-active" : ""}`}
-              aria-expanded={menu === "pages"}
-              onClick={() => setMenu(menu === "pages" ? null : "pages")}
-            >
-              <Settings2 size={15} />
-              페이지 옵션
-              <ChevronDown size={12} />
-            </button>
-            {menu === "pages" && (
-              <div
-                className="dropdown page-options"
-                style={{
-                  position: "fixed",
-                  right: "auto",
-                  left: Math.max(
-                    12,
-                    Math.min(
-                      pageButtonRef.current?.getBoundingClientRect().left || 12,
-                      window.innerWidth - 314,
-                    ),
-                  ),
-                  top:
-                    (pageButtonRef.current?.getBoundingClientRect().bottom ||
-                      110) + 12,
-                }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                    }}
+                  />
+                </Box>
+                <Box as="datalist" id="font-sizes">
+                  {[6, 8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72, 96].map((v) => (
+                    <Box as="option" key={v} value={v} />
+                  ))}
+                </Box>
+              </Inline>
+              <Divider orientation="vertical" />
+              <Inline gap="xs" align="center">
+                <Tool label="굵게 (⌘B)" glyph="bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} />
+                <Tool label="기울임 (⌘I)" glyph="italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} />
+                <Tool label="취소선" glyph="strikethrough" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} />
+                <Tool label="강조" glyph="highlighter" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} />
+                <Tool label="인라인 코드" glyph="code-xml" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} />
+                <Tool label="링크" glyph="link" active={editor.isActive("link")} onClick={() => openDialog({ kind: "link", value: editor.getAttributes("link").href || "" })} />
+              </Inline>
+              <Divider orientation="vertical" />
+              <Inline gap="xs" align="center">
+                <Tool label="왼쪽 정렬" glyph="align-left" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
+                <Tool label="가운데 정렬" glyph="align-center" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />
+                <Tool label="오른쪽 정렬" glyph="align-right" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()} />
+                <Select aria-label="줄 간격" size="xs" value={s.leading} onChange={(e) => settings({ leading: Number(e.target.value) })}>
+                  {[1, 1.15, 1.3, 1.5, 1.6, 1.9, 2, 2.5, 3].map((v) => (
+                    <Select.Option key={v} value={v}>{`↕ ${v}`}</Select.Option>
+                  ))}
+                </Select>
+              </Inline>
+              <Divider orientation="vertical" />
+              <Inline gap="xs" align="center">
+                <Tool label="글머리 목록" glyph="list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} />
+                <Tool label="번호 목록" glyph="list-ordered" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} />
+                <Tool label="체크리스트" glyph="list-todo" active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} />
+                <Tool label="인용" glyph="quote" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} />
+              </Inline>
+              <Divider orientation="vertical" />
+              <Inline gap="xs" align="center">
+                <Tool label="이미지 넣기" glyph="image-plus" onClick={() => imageRef.current?.click()} />
+                <Floating>
+                  <IconButton as={Floating.Trigger} size="xs" variant="ghost" aria-label="표" title="표" aria-current={editor.isActive("table") || undefined} onMouseDown={(e: MouseEvent) => e.preventDefault()}>
+                    <Glyph name="table-2" ink={editor.isActive("table") ? "primary" : "secondary"} />
+                  </IconButton>
+                  <Floating.Content as={Surface} fill="raised" radius="md" padding="xs" placement="bottom start" restoreFocus={false} aria-label="표 편집">
+                    <Stack gap="xs" minWidth="md">
+                      {editor.isActive("table") ? (
+                        <>
+                          <TableItem label="아래에 행 추가" run={() => editor.chain().focus().addRowAfter().run()} />
+                          <TableItem label="오른쪽에 열 추가" run={() => editor.chain().focus().addColumnAfter().run()} />
+                          <TableItem label="선택 행 삭제" run={() => editor.chain().focus().deleteRow().run()} />
+                          <TableItem label="선택 열 삭제" run={() => editor.chain().focus().deleteColumn().run()} />
+                          <TableItem label="표 삭제" run={() => editor.chain().focus().deleteTable().run()} />
+                        </>
+                      ) : (
+                        <TableItem label="3 × 3 표 넣기" run={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+                      )}
+                    </Stack>
+                  </Floating.Content>
+                </Floating>
+                <Tool label="수식 넣기" glyph="sigma" onClick={() => openDialog({ kind: "math" })} />
+                <Tool label="구분선" glyph="minus" onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+              </Inline>
+            </Inline>
+            <Inline align="center" gap="sm">
+              <Floating>
+                <Button as={Floating.Trigger} variant="ghost" size="xs">
+                  <Glyph name="settings-2" />
+                  페이지 옵션
+                  <Glyph name="chevron-down" />
+                </Button>
+                <Floating.Content as={Surface} fill="raised" radius="md" padding="xl" width="xl" maxWidth="full" placement="bottom end" aria-label="페이지 옵션">
+                  <Stack gap="lg">
+                    <Inline justify="between" align="center">
+                      <Text as="h2" variant="subheading">페이지 옵션</Text>
+                      <IconButton as={Floating.Close} size="xs" variant="ghost" aria-label="페이지 옵션 닫기">
+                        <Glyph name="x" />
+                      </IconButton>
+                    </Inline>
+                    <Stack gap="sm">
+                      <SegmentControl aria-label="페이지 방식" fullWidth value={s.mode} onValueChange={(mode) => settings({ mode: mode as Settings["mode"] })}>
+                        <SegmentControl.Item value="continuous">무한 높이</SegmentControl.Item>
+                        <SegmentControl.Item value="pages">페이지 분할</SegmentControl.Item>
+                      </SegmentControl>
+                      <Text as="p" variant="label" strong={false} ink="tertiary">
+                        {s.mode === "continuous" ? "내용과 위아래 여백에 딱 맞는 한 장의 문서입니다." : "용지 높이에 맞춰 종이를 나눕니다."}
+                      </Text>
+                    </Stack>
+                    <Stack gap="md">
+                      <OptionRow label="페이지 크기">
+                        <Box width="lg">
+                          <Select size="sm" aria-label="페이지 크기" value={s.paper} onChange={(e) => settings({ paper: e.target.value as Settings["paper"] })}>
+                            <Select.Option value="a4">A4 · 210 × 297 mm</Select.Option>
+                            <Select.Option value="a5">A5 · 148 × 210 mm</Select.Option>
+                            <Select.Option value="letter">Letter · 216 × 279 mm</Select.Option>
+                            <Select.Option value="custom">사용자 지정</Select.Option>
+                          </Select>
+                        </Box>
+                      </OptionRow>
+                      {s.paper === "custom" && (
+                        <Inline gap="lg" justify="between" align="start">
+                          <Stack gap="xs">
+                            <Text as="span" variant="label" strong={false} ink="secondary">너비</Text>
+                            <Box width="sm">
+                              <Field size="sm" type="number" numeric aria-label="페이지 너비" min="80" max="500" key={s.width} defaultValue={s.width} trailing={<Text as="span" variant="caption" ink="tertiary">mm</Text>} onBlur={(e) => settings({ width: mm(e.target.value, 80, 500) })} />
+                            </Box>
+                          </Stack>
+                          <Stack gap="xs">
+                            <Text as="span" variant="label" strong={false} ink="secondary">높이</Text>
+                            <Box width="sm">
+                              <Field size="sm" type="number" numeric aria-label="페이지 높이" min="80" max="2000" key={s.height} defaultValue={s.height} disabled={s.mode === "continuous"} trailing={<Text as="span" variant="caption" ink="tertiary">mm</Text>} onBlur={(e) => settings({ height: mm(e.target.value, 80, 2000) })} />
+                            </Box>
+                          </Stack>
+                        </Inline>
+                      )}
+                      <OptionRow label="방향">
+                        <Box width="sm">
+                          <Select size="sm" aria-label="페이지 방향" value={s.landscape ? "landscape" : "portrait"} onChange={(e) => settings({ landscape: e.target.value === "landscape" })}>
+                            <Select.Option value="portrait">세로</Select.Option>
+                            <Select.Option value="landscape">가로</Select.Option>
+                          </Select>
+                        </Box>
+                      </OptionRow>
+                      <OptionRow label="여백">
+                        <Box width="sm">
+                          <Field size="sm" type="number" numeric aria-label="페이지 여백" min="5" max="50" key={s.margin} defaultValue={s.margin} trailing={<Text as="span" variant="caption" ink="tertiary">mm</Text>} onBlur={(e) => settings({ margin: mm(e.target.value, 5, 50) })} />
+                        </Box>
+                      </OptionRow>
+                    </Stack>
+                    <Divider />
+                    <Inline justify="between" gap="md">
+                      <Text as="span" variant="label" strong={false} ink="tertiary">
+                        {s.mode === "continuous" ? `${Math.round(dim.width)} mm · 내용 높이` : `${Math.round(dim.width)} × ${Math.round(dim.height)} mm`}
+                      </Text>
+                      <Text as="span" variant="label" strong={false} ink="tertiary">{s.mode === "continuous" ? "내용에 맞춤" : `${pages}페이지`}</Text>
+                    </Inline>
+                    {s.mode === "continuous" && (
+                      <Text as="p" variant="label" strong={false} ink="tertiary">
+                        무한 높이는 내용에 맞춰 자동으로 늘고 줄어듭니다. 고정 높이는 페이지 분할에서 설정하세요.
+                      </Text>
+                    )}
+                  </Stack>
+                </Floating.Content>
+              </Floating>
+              <Select
+                aria-label="화면 배율"
+                size="xs"
+                variant="ghost"
+                value={s.zoom}
+                onChange={(e) => settings({ zoom: e.target.value === "fit" ? "fit" : Number(e.target.value) })}
               >
-                <div className="panel-heading">
-                  <h2>페이지 옵션</h2>
-                  <button
-                    className="tool"
-                    aria-label="페이지 옵션 닫기"
-                    onClick={() => setMenu(null)}
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-                <SegmentControl
-                  aria-label="페이지 방식"
-                  fullWidth
-                  value={s.mode}
-                  onValueChange={(mode) =>
-                    settings({ mode: mode as Settings["mode"] })
-                  }
-                >
-                  <SegmentControl.Item value="continuous">
-                    무한 높이
-                  </SegmentControl.Item>
-                  <SegmentControl.Item value="pages">
-                    페이지 분할
-                  </SegmentControl.Item>
-                </SegmentControl>
-                <p className="option-help">
-                  {s.mode === "continuous"
-                    ? "내용과 위아래 여백에 딱 맞는 한 장의 문서입니다."
-                    : "용지 높이에 맞춰 종이를 나눕니다."}
-                </p>
-                <label>
-                  페이지 크기
-                  <Select
-                    aria-label="페이지 크기"
-                    className="option-select paper-select"
-                    size="xs"
-                    value={s.paper}
-                    onChange={(e) =>
-                      settings({ paper: e.target.value as Settings["paper"] })
-                    }
-                  >
-                    <Select.Option value="a4">A4 · 210 × 297 mm</Select.Option>
-                    <Select.Option value="a5">A5 · 148 × 210 mm</Select.Option>
-                    <Select.Option value="letter">Letter · 216 × 279 mm</Select.Option>
-                    <Select.Option value="custom">사용자 지정</Select.Option>
-                  </Select>
-                </label>
-                {s.paper === "custom" && (
-                  <div className="dimension-fields">
-                    <label>
-                      너비
-                      <span>
-                        <input
-                          aria-label="페이지 너비"
-                          type="number"
-                          min="80"
-                          max="500"
-                          key={s.width}
-                          defaultValue={s.width}
-                          onBlur={(e) =>
-                            settings({
-                              width: Math.max(
-                                80,
-                                Math.min(500, Number(e.target.value)),
-                              ),
-                            })
-                          }
-                        />
-                        mm
-                      </span>
-                    </label>
-                    <label>
-                      높이
-                      <span>
-                        <input
-                          disabled={s.mode === "continuous"}
-                          aria-label="페이지 높이"
-                          type="number"
-                          min="80"
-                          max="2000"
-                          key={s.height}
-                          defaultValue={s.height}
-                          onBlur={(e) =>
-                            settings({
-                              height: Math.max(
-                                80,
-                                Math.min(2000, Number(e.target.value)),
-                              ),
-                            })
-                          }
-                        />
-                        mm
-                      </span>
-                    </label>
-                  </div>
-                )}
-                <label>
-                  방향
-                  <Select
-                    aria-label="페이지 방향"
-                    className="option-select orientation-select"
-                    size="xs"
-                    value={s.landscape ? "landscape" : "portrait"}
-                    onChange={(e) =>
-                      settings({ landscape: e.target.value === "landscape" })
-                    }
-                  >
-                    <Select.Option value="portrait">세로</Select.Option>
-                    <Select.Option value="landscape">가로</Select.Option>
-                  </Select>
-                </label>
-                <label>
-                  여백
-                  <span className="unit-field">
-                    <input
-                      aria-label="페이지 여백"
-                      type="number"
-                      min="5"
-                      max="50"
-                      key={s.margin}
-                      defaultValue={s.margin}
-                      onBlur={(e) =>
-                        settings({
-                          margin: Math.max(
-                            5,
-                            Math.min(50, Number(e.target.value)),
-                          ),
-                        })
-                      }
-                    />
-                    mm
-                  </span>
-                </label>
-                <div className="page-spec">
-                  <span>
-                    {s.mode === "continuous"
-                      ? `${Math.round(dim.width)} mm · 내용 높이`
-                      : `${Math.round(dim.width)} × ${Math.round(dim.height)} mm`}
-                  </span>
-                  <span>
-                    {s.mode === "continuous" ? "내용에 맞춤" : `${pages}페이지`}
-                  </span>
-                </div>
-                {s.mode === "continuous" && (
-                  <p className="option-help">
-                    무한 높이는 내용에 맞춰 자동으로 늘고 줄어듭니다. 고정
-                    높이는 페이지 분할에서 설정하세요.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-          <span className="zoom-control">
-            <Select
-              aria-label="화면 배율"
-              size="xs"
-              variant="ghost"
-              value={s.zoom}
-              onChange={(e) =>
-                settings({
-                  zoom:
-                    e.target.value === "fit" ? "fit" : Number(e.target.value),
-                })
-              }
-            >
-              <Select.Option value="fit">너비 맞춤</Select.Option>
-              {[50, 75, 100, 125, 150, 175, 200].map((v) => (
-                <Select.Option key={v} value={v}>
-                  {`${v}%`}
-                </Select.Option>
-              ))}
-            </Select>
-          </span>
-        </div>
-      </div>
+                <Select.Option value="fit">너비 맞춤</Select.Option>
+                {[50, 75, 100, 125, 150, 175, 200].map((v) => (
+                  <Select.Option key={v} value={v}>{`${v}%`}</Select.Option>
+                ))}
+              </Select>
+            </Inline>
+          </Inline>
+        </Box>
+      </Surface>
       <main className="workspace" ref={stageRef}>
         <div className="document-stage" style={{ width: (width + 2) * zoom }}>
-          <div className="document-caption">
-            <span>
-              {s.paper === "custom" ? "CUSTOM" : s.paper.toUpperCase()}{" "}
-              <span className="caption-dot">·</span>{" "}
-              {s.mode === "pages" ? `${pages} PAGES` : "CONTINUOUS"}
-            </span>
-            <span>클릭해서 바로 쓰세요</span>
-          </div>
-          <div
-            className={`paper-stack ${s.mode === "pages" ? "paginated" : "continuous"}`}
-            style={{
-              zoom,
-              minHeight:
-                s.mode === "pages" ? pages * height + (pages - 1) * 24 : 0,
-            }}
-          >
+          <Stack gap="md">
+          <Inline justify="between" gap="md">
+            <Text as="span" variant="label" strong={false} ink="tertiary">
+              {s.paper === "custom" ? "CUSTOM" : s.paper.toUpperCase()} · {s.mode === "pages" ? `${pages} PAGES` : "CONTINUOUS"}
+            </Text>
+            <Box hideBelow="md">
+              <Text as="span" variant="label" strong={false} ink="tertiary">클릭해서 바로 쓰세요</Text>
+            </Box>
+          </Inline>
+          <div className={`paper-stack ${s.mode === "pages" ? "paginated" : "continuous"}`} style={{ zoom, minHeight: s.mode === "pages" ? pages * height + (pages - 1) * 24 : 0 }}>
             {s.mode === "pages" && (
               <div className="page-surfaces" aria-hidden="true">
                 {Array.from({ length: pages }, (_, i) => (
-                  <div
-                    key={i}
-                    className="page-surface"
-                    style={{ top: i * (height + 24) }}
-                  >
+                  <div key={i} className="page-surface" style={{ top: i * (height + 24) }}>
                     <span className="page-number">{i + 1}</span>
                   </div>
                 ))}
@@ -1445,57 +1136,84 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
             )}
             <EditorContent editor={editor} />
           </div>
-          <div className="document-end">
-            <span>문서 끝</span>
-          </div>
+          <Stack align="center">
+            <Text as="span" variant="label" strong={false} ink="tertiary">문서 끝</Text>
+          </Stack>
+          </Stack>
         </div>
       </main>
-      <footer className="statusbar">
-        <div className="status-primary">
-          <span>{s.mode === "pages" ? `${pages}페이지` : "무한 높이"}</span>
-          <span className="status-divider" />
-          <span>{Math.max(1, Math.ceil(stats.words / 200))}분 읽기</span>
-        </div>
-        <div className="document-stats" aria-label="문서 통계">
-          <span>
-            <b>{stats.words.toLocaleString()}</b> 단어
-          </span>
-          <span title="문단과 줄바꿈 기준 · 자동 줄바꿈 제외">
-            <b>{stats.lines.toLocaleString()}</b> 줄
-          </span>
-          <span>
-            <b>{stats.chars.toLocaleString()}</b> 자 <em>공백 포함</em>
-          </span>
-          <span>
-            <b>{stats.compact.toLocaleString()}</b> 자 <em>공백 제외</em>
-          </span>
-          {selection && (
-            <span className="selection-stat">선택 {selected.chars}자</span>
-          )}
-        </div>
-        <span className="storage-hint">{account.saveLabel ? "계정에 자동 저장" : "이 브라우저에 자동 저장"}</span>
-      </footer>
-      {slash && slashItems.length > 0 && (
-        <div
-          className="slash-menu dropdown"
-          style={{ left: slash.left, top: slash.top }}
+      <Surface as="footer" fill="raised" border="top" paddingX="xl" paddingY="sm" className="statusbar">
+        <Inline justify="between" align="center" gap="xl" wrap>
+          <Inline gap="xl" align="center" wrap>
+            <Inline gap="md" align="stretch">
+              <Quiet>{s.mode === "pages" ? `${pages}페이지` : "무한 높이"}</Quiet>
+              <Divider orientation="vertical" />
+              <Quiet>{Math.max(1, Math.ceil(stats.words / 200))}분 읽기</Quiet>
+            </Inline>
+            <Inline gap="lg" align="center" wrap role="group" aria-label="문서 통계">
+              <Count value={stats.words} unit="단어" />
+              <span title="문단과 줄바꿈 기준 · 자동 줄바꿈 제외"><Count value={stats.lines} unit="줄" /></span>
+              <Count value={stats.chars} unit="자" of="공백 포함" />
+              <Count value={stats.compact} unit="자" of="공백 제외" />
+              {selection && (
+                <Inline gap="lg" align="stretch">
+                  <Divider orientation="vertical" />
+                  <Quiet>선택 {selected.chars}자</Quiet>
+                </Inline>
+              )}
+            </Inline>
+          </Inline>
+          <Box hideBelow="lg">
+            <Quiet>{account.saveLabel ? "계정에 자동 저장" : "이 브라우저에 자동 저장"}</Quiet>
+          </Box>
+        </Inline>
+      </Surface>
+      <span ref={slashAnchor} className="caret-anchor" style={{ left: slash?.left ?? 0, top: slash?.top ?? 0 }} />
+      <Floating open={!!slash && slashItems.length > 0} onOpenChange={() => {}}>
+        <Floating.Content
+          as={Surface}
+          fill="raised"
+          radius="md"
+          padding="xs"
+          width="lg"
+          maxHeight="xl"
+          overflowY="auto"
+          anchorRef={slashAnchor}
+          placement="bottom start"
+          flip={false}
+          role="listbox"
+          dismissable={false}
+          keyboardDismissDisabled
+          autoFocus={false}
+          restoreFocus={false}
+          aria-label="블록 추가"
         >
-          <p className="menu-caption">블록 추가</p>
-          {slashItems.map((item, index) => (
-            <button
-              className={index === slashIndex ? "is-active" : ""}
-              key={item.label}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => runSlash(index)}
-            >
-              <span>
-                {item.label}
-                <small>{item.hint}</small>
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+          <Stack gap="xs">
+            <Box paddingX="md" paddingY="sm">
+              <Text as="span" variant="label" strong={false} ink="tertiary">블록 추가</Text>
+            </Box>
+            {slashItems.map((item, index) => (
+              <Button
+                key={item.label}
+                variant="ghost"
+                size="lg"
+                fullWidth
+                justify="start"
+                selected={index === slashIndex}
+                role="option"
+                aria-selected={index === slashIndex}
+                onMouseDown={(e: MouseEvent) => e.preventDefault()}
+                onClick={() => runSlash(index)}
+              >
+                <Stack as="span" align="start">
+                  <Text as="span" ink="inherit">{item.label}</Text>
+                  <Text as="span" variant="label" strong={false} ink="tertiary">{item.hint}</Text>
+                </Stack>
+              </Button>
+            ))}
+          </Stack>
+        </Floating.Content>
+      </Floating>
       <input
         ref={importRef}
         type="file"
@@ -1517,103 +1235,75 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
         }}
       />
       {notice && (
-        <div className="toast" role="status">
-          <Check size={16} />
-          <span>{notice}</span>
-          <button aria-label="알림 닫기" onClick={() => setNotice("")}>
-            <X size={14} />
-          </button>
-        </div>
+        <Portal>
+          <Box className="toast-dock">
+            <Surface theme="inverse" fill="canvas" radius="md" elevation="toast" paddingX="lg" paddingY="sm" role="status">
+              <Inline gap="md" align="center">
+                <Glyph name="check" />
+                <Text as="span" variant="caption" ink="inherit">{notice}</Text>
+                <IconButton size="xs" variant="ghost" aria-label="알림 닫기" onClick={() => setNotice("")}>
+                  <Glyph name="x" />
+                </IconButton>
+              </Inline>
+            </Surface>
+          </Box>
+        </Portal>
       )}
-      {dialog && (
-        <dialog
-          ref={dialogRef}
-          className="document-dialog"
-          onCancel={() => setDialog(null)}
+      <Floating open={!!dialog} onOpenChange={(open) => !open && setDialog(null)}>
+        <Floating.Content
+          as={Surface}
+          fill="raised"
+          radius="md"
+          padding="xl"
+          width={phone ? "xl" : "measure.xs"}
+          maxWidth="full"
+          presentation="modal"
+          restoreFocus={false}
+          initialFocusRef={withField ? dialogField : undefined}
+          aria-label={shownDialog ? DIALOG_TITLES[shownDialog.kind] : "대화상자"}
         >
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitDialog();
-            }}
-          >
-            <div className="panel-heading">
-              <h2>
-                {dialog.kind === "new"
-                  ? "새 문서를 시작할까요?"
-                  : dialog.kind === "link"
-                    ? "링크 편집"
-                    : dialog.kind === "math"
-                      ? "LaTeX 수식"
-                      : dialog.kind === "transfer"
-                        ? "문서를 Paperdown으로 옮기기"
-                        : "문서 열기"}
-              </h2>
-              <button
-                type="button"
-                className="tool"
-                aria-label="대화상자 닫기"
-                onClick={() => setDialog(null)}
-              >
-                <X size={17} />
-              </button>
-            </div>
-            {dialog.kind === "link" || dialog.kind === "math" ? (
-              <>
-                <label className="dialog-label">
-                  {dialog.kind === "link" ? "링크 주소" : "수식 입력"}
-                  <input
-                    autoFocus
-                    value={dialogValue}
-                    onChange={(e) => setDialogValue(e.target.value)}
-                    placeholder={
-                      dialog.kind === "link"
-                        ? "https://example.com"
-                        : "E = mc^2"
-                    }
-                  />
-                </label>
-                <p>
-                  {dialog.kind === "link"
-                    ? "주소를 비우면 링크를 해제합니다."
-                    : "삽입한 수식을 클릭하면 다시 편집합니다."}
-                </p>
-              </>
-            ) : (
-              <p>
-                {dialog.kind === "new"
-                  ? "현재 문서를 파일로 내려받아 보관한 뒤 새 문서를 시작합니다."
-                  : `“${dialog.data?.title}” 문서를 불러옵니다. 현재 문서는 먼저 파일로 내려받아 보관합니다.`}
-              </p>
-            )}
-            <div className="dialog-actions">
-              <button
-                type="button"
-                className="action-button"
-                onClick={() => setDialog(null)}
-              >
-                취소
-              </button>
-              {dialog.kind === "new" && (
-                <button
-                  type="button"
-                  className="action-button"
-                  onClick={downloadDocument}
+          <Stack gap="lg">
+            <Inline justify="between" align="center" gap="md">
+              <Text as="h2" variant="subheading">{shownDialog ? DIALOG_TITLES[shownDialog.kind] : ""}</Text>
+              <IconButton as={Floating.Close} size="xs" variant="ghost" aria-label="대화상자 닫기">
+                <Glyph name="x" />
+              </IconButton>
+            </Inline>
+            <Stack
+              as="form"
+              gap="xl"
+              onSubmit={(e: FormEvent<HTMLFormElement>) => {
+                e.preventDefault();
+                void submitDialog();
+              }}
+            >
+              {withField ? (
+                <FormField
+                  label={shownDialog?.kind === "link" ? "링크 주소" : "수식 입력"}
+                  description={shownDialog?.kind === "link" ? "주소를 비우면 링크를 해제합니다." : "삽입한 수식을 클릭하면 다시 편집합니다."}
                 >
-                  현재 문서 저장
-                </button>
+                  <Field ref={dialogField} size="md" value={dialogValue} onChange={(e) => setDialogValue(e.target.value)} placeholder={shownDialog?.kind === "link" ? "https://example.com" : "E = mc^2"} />
+                </FormField>
+              ) : (
+                <Text as="p" ink="secondary">
+                  {shownDialog?.kind === "new"
+                    ? "현재 문서를 파일로 내려받아 보관한 뒤 새 문서를 시작합니다."
+                    : `“${shownDialog?.data?.title}” 문서를 불러옵니다. 현재 문서는 먼저 파일로 내려받아 보관합니다.`}
+                </Text>
               )}
-              <button className="action-button primary" type="submit">
-                {dialog.kind === "new"
-                  ? "새 문서"
-                  : dialog.kind === "link" || dialog.kind === "math"
-                    ? "적용"
-                    : "불러오기"}
-              </button>
-            </div>
-          </form>
-        </dialog>
-      )}
+              <Inline justify="end" gap="sm" wrap>
+                <Button variant="hairline" size="sm" onClick={() => setDialog(null)}>취소</Button>
+                {shownDialog?.kind === "new" && (
+                  <Button variant="hairline" size="sm" onClick={() => void downloadDocument()}>현재 문서 저장</Button>
+                )}
+                <Button type="submit" size="sm">
+                  {shownDialog?.kind === "new" ? "새 문서" : withField ? "적용" : "불러오기"}
+                </Button>
+              </Inline>
+            </Stack>
+          </Stack>
+        </Floating.Content>
+      </Floating>
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { FilePlus2, FileText, LogOut, Search, Trash2, X, PanelLeft, Cloud, RefreshCw, Copy } from 'lucide-react';
+import { Box, Button, Divider, Field, Floating, FormField, Grid, IconButton, Inline, SegmentControl, Spinner, Stack, Surface, Text } from '@studio-baeks/paper-ui';
+import { Glyph } from './glyphs';
+import { useMedia } from './hooks';
+import { Avatar, Serif, Wordmark } from './chrome';
 import { api, ApiError, draft, uploadImage, type User, type Note, type NoteSummary } from './cloud';
 import { normalize, persistDocument, type DocumentData } from './document';
 import { Home } from './Home';
@@ -38,7 +41,7 @@ export function Account({ initial, children }: { initial: DocumentData; children
   const [status,setStatus] = useState('계정에 저장됨');
   const [conflict,setConflict] = useState(false);
   const [expired,setExpired] = useState(false);
-  const modalRef = useRef<HTMLElement>(null);
+  const firstField = useRef<HTMLInputElement>(null);
   const current = useRef<Note | null>(null);
   const userRef = useRef<User | null>(null);
   const sequence = useRef(Promise.resolve());
@@ -83,21 +86,6 @@ export function Account({ initial, children }: { initial: DocumentData; children
     }).finally(()=>{if(live)setReady(true);});
     return ()=>{live=false;};
   },[]);
-  useEffect(()=> {
-    if (!authOpen) return;
-    const previous=document.activeElement as HTMLElement;
-    const keydown=(event:KeyboardEvent)=> {
-      if(event.key==='Escape'&&!working) {event.preventDefault();setAuthOpen(false);}
-      if(event.key==='Tab') {
-        const elements=Array.from(modalRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled)')||[]);
-        const first=elements[0],last=elements[elements.length-1];
-        if(event.shiftKey&&document.activeElement===first) {event.preventDefault();last?.focus();}
-        if(!event.shiftKey&&document.activeElement===last) {event.preventDefault();first?.focus();}
-      }
-    };
-    document.addEventListener('keydown',keydown);
-    return ()=> {document.removeEventListener('keydown',keydown);previous?.focus();};
-  },[authOpen,working]);
   // Serialize writes and retain each unsynced draft by account/note. Server revisions prevent lost updates.
   async function save(document: DocumentData) {
     latest.current=document;
@@ -205,27 +193,48 @@ export function Account({ initial, children }: { initial: DocumentData; children
     try {const {note}=await api<{note:Note}>(`/notes/${current.current.id}`);select(note);}
     catch(e){setError(e instanceof Error?e.message:'서버 문서를 불러오지 못했습니다.');}
   }
-  const accountButton=<button className="action-button account-toggle" onClick={()=>user?setOpen(!open):setAuthOpen(true)} aria-expanded={user?open:authOpen}><PanelLeft size={16}/><span>{user?'내 노트':'로그인'}</span></button>;
+  const accountButton=<Button variant="hairline" size="sm" aria-label={user?'내 노트':'로그인'} aria-expanded={user?open:authOpen} onClick={()=>user?setOpen(!open):setAuthOpen(true)}><Glyph name="panel-left"/><Box as="span" hideBelow="md">{user?'내 노트':'로그인'}</Box></Button>;
   const controls:AccountControls={persist:save,changed:document=>{latest.current=document;if(current.current&&userRef.current&&document.updatedAt!==current.current.document.updatedAt) {
       pending.current=true;
       void draft(userRef.current.id,current.current.id,{document,revision:current.current.revision,dirty:true}).catch(()=>setError('로컬 초안을 보관하지 못했습니다. 내보내기로 문서를 보관해주세요.'));
     }},create:()=>void createNote(),home:()=>void go('/'),upload:user?uploadImage:undefined,saveLabel:user?status:undefined,accountButton};
-  return <div className={`account-layout ${user&&open&&route.kind==='document'?'with-sidebar':''}`}>
-    {user&&open&&route.kind==='document'&&<aside className="notes-sidebar" aria-label="내 노트">
-      <div className="notes-heading"><span className="wordmark">Paperdown</span><button className="tool" onClick={()=>setOpen(false)} aria-label="노트 목록 닫기"><X size={17}/></button></div>
-      <div className="account-identity"><span className="account-avatar">{user.username.slice(0,1).toUpperCase()}</span><div><strong>{user.username}</strong><small>나만의 글을 모아두는 곳</small></div><button className="tool" disabled={working} onClick={()=>void logout()} aria-label="로그아웃"><LogOut size={16}/></button></div>
-      <button className="action-button new-note" disabled={working} onClick={()=>void createNote()}><FilePlus2 size={16}/>새 노트</button>
-      <label className="notes-search"><Search size={15}/><input aria-label="노트 검색" placeholder="노트 찾기" value={search} onChange={e=>setSearch(e.target.value)}/></label>
-      <p className="notes-caption">내 노트 <span>{notes.length}</span></p>
-      <div className="notes-list">{notes.filter(n=>n.title.toLowerCase().includes(search.toLowerCase())).map(note=><div className={`note-row ${active?.id===note.id?'selected':''}`} key={note.id}><button className="note-select" disabled={working} onClick={()=>void switchNote(note)}><FileText size={16}/><span><strong>{note.title||'제목 없는 노트'}</strong><small>{new Date(note.updatedAt).toLocaleDateString('ko-KR',{month:'long',day:'numeric'})}</small></span></button><button className="note-delete" disabled={working} onClick={()=>void removeNote(note)} aria-label={`${note.title||'노트'} 삭제`}><Trash2 size={14}/></button></div>)}</div>
-      <div className="sidebar-footer"><Cloud size={15}/><span>계정에 안전하게 보관</span></div>
-    </aside>}
+  const phone=useMedia('(max-width: 767px)');
+  const missing=route.kind==='missing'||routeError;
+  const sidebar=user&&open&&route.kind==='document';
+  const shownNotes=notes.filter(n=>n.title.toLowerCase().includes(search.toLowerCase()));
+  const edge=phone?{shadow:true as const,fill:'raised' as const}:{elevation:'sticky' as const,top:'none' as const};
+  return <div className={`account-layout ${sidebar?'with-sidebar':''}`}>
+    {sidebar&&<Surface as="aside" aria-label="내 노트" fill="raised" border="end" height="viewport" className="notes-sidebar" {...edge}>
+      <Grid rows="auto auto auto auto auto minmax(0, 1fr) auto" gap="lg" height="full" padding="lg">
+        <Inline justify="between" align="center" paddingX="sm"><Wordmark small/><IconButton variant="ghost" size="sm" aria-label="노트 목록 닫기" onClick={()=>setOpen(false)}><Glyph name="x"/></IconButton></Inline>
+        <Inline align="center" gap="sm" paddingX="sm"><Avatar name={user.username}/><Stack minWidth={0} width="full"><Text as="strong" variant="label" truncate>{user.username}</Text><Text as="span" variant="label" strong={false} ink="tertiary" truncate>나만의 글을 모아두는 곳</Text></Stack><IconButton variant="ghost" size="xs" aria-label="로그아웃" disabled={working} onClick={()=>void logout()}><Glyph name="log-out"/></IconButton></Inline>
+        <Button variant="hairline" size="sm" fullWidth disabled={working} onClick={()=>void createNote()}><Glyph name="file-plus-2"/>새 노트</Button>
+        <Field size="sm" aria-label="노트 검색" placeholder="노트 찾기" leading={<Glyph name="search"/>} value={search} onChange={e=>setSearch(e.target.value)}/>
+        <Inline justify="between" paddingX="sm"><Text as="span" variant="label" strong={false} ink="secondary">내 노트</Text><Text as="span" variant="label" strong={false} ink="secondary" numeric>{notes.length}</Text></Inline>
+        <Box overflowY="auto"><Stack as="ul" gap="xs" className="plain-list">{shownNotes.map(note=><Inline as="li" key={note.id} align="center" gap="xs"><Box minWidth={0} width="full"><Button variant="ghost" size="md" fullWidth justify="start" selected={active?.id===note.id} disabled={working} onClick={()=>void switchNote(note)}><Glyph name="file-text" ink="secondary"/><Stack as="span" align="start" minWidth={0}><Text as="span" variant="label" ink="inherit" truncate>{note.title||'제목 없는 노트'}</Text><Text as="span" variant="label" strong={false} ink="tertiary">{new Date(note.updatedAt).toLocaleDateString('ko-KR',{month:'long',day:'numeric'})}</Text></Stack></Button></Box><IconButton variant="ghost" size="xs" aria-label={`${note.title||'노트'} 삭제`} disabled={working} onClick={()=>void removeNote(note)}><Glyph name="trash-2" ink="tertiary"/></IconButton></Inline>)}</Stack></Box>
+        <Stack gap="md"><Divider/><Inline justify="center" align="center" gap="sm"><Glyph name="cloud" ink="secondary"/><Text as="span" variant="label" strong={false} ink="secondary">계정에 안전하게 보관</Text></Inline></Stack>
+      </Grid>
+    </Surface>}
     <div className="account-main">
-      {error&&!authOpen&&<div className="cloud-message" role="status"><span>{error}</span><button onClick={()=>expired?setAuthOpen(true):retryRef.current()}><RefreshCw size={14}/>{expired?"다시 로그인":"재시도"}</button><button onClick={()=>setError('')} aria-label="알림 닫기"><X size={14}/></button></div>}
-      {conflict&&<div className="cloud-message conflict" role="alert"><span>다른 기기의 변경을 덮어쓰지 않았습니다. 현재 초안을 새 노트로 보관하거나 서버 문서를 불러오세요.</span><button onClick={()=>void createNote(latest.current)}><Copy size={14}/>초안으로 새 노트</button><button onClick={()=>void reloadRemote()}>서버 문서 불러오기</button></div>}
-      {!ready?<div className="loading"><span className="wordmark">Paperdown</span><p>문서를 불러오는 중…</p></div>:route.kind==='home'?<Home user={user} notes={notes} guest={guest} working={working} open={note=>void switchNote(note)} create={()=>void createNote()} guestOpen={()=>void go(documentPath('local'))} login={()=>setAuthOpen(true)} logout={()=>void logout()} remove={note=>void removeNote(note)}/>:route.kind==='missing'||routeError?<div className="notes-empty"><FileText size={32}/><h1>{route.kind==='missing'?'페이지를 찾을 수 없습니다':'문서를 열 수 없습니다'}</h1><p>{routeError||'주소를 확인하거나 홈에서 문서를 선택해주세요.'}</p>{(!user||expired)&&route.kind==='document'&&<button className="action-button primary" onClick={()=>setAuthOpen(true)}>로그인 / 회원가입</button>}<button className="action-button" onClick={()=>void go('/')}>홈으로</button></div>:loadingNote||(route.kind==='document'&&(route.id==='local'?active!==null:active?.id!==route.id))?<div className="loading"><p>문서를 불러오는 중…</p></div>:children(route.kind==='document'&&route.id==='local'?guest:latest.current,route.kind==='document'&&route.id==='local'?'guest':`${active!.id}:${generation}`,route.kind==='document'&&route.id==='local'?{...controls,upload:undefined,saveLabel:undefined,persist:async document=>{latest.current=document;setGuest(document);await persistDocument(document);},changed:document=>{latest.current=document;setGuest(document);}}:controls)}
-
+      {error&&!authOpen&&<Surface fill="raised" border="bottom" paddingX="xl" paddingY="md" role="status"><Inline align="center" gap="md" wrap><Text as="span" variant="caption">{error}</Text><Button variant="ghost" size="xs" onClick={()=>expired?setAuthOpen(true):retryRef.current()}><Glyph name="refresh-cw"/>{expired?"다시 로그인":"재시도"}</Button><IconButton variant="ghost" size="xs" aria-label="알림 닫기" onClick={()=>setError('')}><Glyph name="x"/></IconButton></Inline></Surface>}
+      {conflict&&<Surface fill="raised" border="bottom" paddingX="xl" paddingY="md" role="alert"><Inline align="center" gap="md" wrap><Text as="span" variant="caption">다른 기기의 변경을 덮어쓰지 않았습니다. 현재 초안을 새 노트로 보관하거나 서버 문서를 불러오세요.</Text><Button variant="ghost" size="xs" onClick={()=>void createNote(latest.current)}><Glyph name="copy"/>초안으로 새 노트</Button><Button variant="ghost" size="xs" onClick={()=>void reloadRemote()}>서버 문서 불러오기</Button></Inline></Surface>}
+      {!ready?<Stack align="center" justify="center" gap="md" minHeight="viewport"><Wordmark/><Inline gap="sm" align="center"><Spinner size="inline" label="문서를 불러오는 중"/><Text as="p" variant="caption" ink="tertiary">문서를 불러오는 중…</Text></Inline></Stack>:route.kind==='home'?<Home user={user} notes={notes} guest={guest} working={working} open={note=>void switchNote(note)} create={()=>void createNote()} guestOpen={()=>void go(documentPath('local'))} login={()=>setAuthOpen(true)} logout={()=>void logout()} remove={note=>void removeNote(note)}/>:missing?<Stack as="main" align="center" justify="center" gap="lg" minHeight="viewport" padding="2xl"><Stack align="center" gap="xl"><Glyph name="file-text" size="subheading" ink="secondary"/><Serif as="h1" variant="title" strong>{route.kind==='missing'?'페이지를 찾을 수 없습니다':'문서를 열 수 없습니다'}</Serif><Text as="p" ink="secondary">{routeError||'주소를 확인하거나 홈에서 문서를 선택해주세요.'}</Text></Stack>{(!user||expired)&&route.kind==='document'&&<Button size="sm" onClick={()=>setAuthOpen(true)}>로그인 / 회원가입</Button>}<Button variant="hairline" size="sm" onClick={()=>void go('/')}>홈으로</Button></Stack>:loadingNote||(route.kind==='document'&&(route.id==='local'?active!==null:active?.id!==route.id))?<Stack align="center" justify="center" minHeight="viewport"><Inline gap="sm" align="center"><Spinner size="inline" label="문서를 불러오는 중"/><Text as="p" variant="caption" ink="tertiary">문서를 불러오는 중…</Text></Inline></Stack>:children(route.kind==='document'&&route.id==='local'?guest:latest.current,route.kind==='document'&&route.id==='local'?'guest':`${active!.id}:${generation}`,route.kind==='document'&&route.id==='local'?{...controls,upload:undefined,saveLabel:undefined,persist:async document=>{latest.current=document;setGuest(document);await persistDocument(document);},changed:document=>{latest.current=document;setGuest(document);}}:controls)}
     </div>
-    {authOpen&&<div className="account-modal-backdrop" onClick={e=>{if(e.target===e.currentTarget&&!working)setAuthOpen(false);}}><section ref={modalRef} className="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title"><button className="account-close tool" onClick={()=>setAuthOpen(false)} aria-label="로그인 창 닫기"><X size={18}/></button><span className="wordmark">Paperdown</span><h1 id="account-title">{register?'글이 머무를 계정을 만드세요':'당신의 글을 이어가세요'}</h1><p>여러 노트를 모아두고, 어느 기기에서든 이어 쓰세요.</p><div className="auth-tabs"><button className={!register?'active':''} onClick={()=>{setRegister(false);setError('');}}>로그인</button><button className={register?'active':''} onClick={()=>{setRegister(true);setError('');}}>회원가입</button></div><form onSubmit={login}><label>아이디<input name="username" required minLength={3} maxLength={32} pattern="[a-zA-Z0-9][a-zA-Z0-9_.\-]{2,31}" autoComplete="username" autoFocus placeholder="영문·숫자 3~32자"/></label><label>비밀번호<input name="password" type="password" required minLength={10} maxLength={128} autoComplete={register?'new-password':'current-password'} placeholder="10자 이상"/></label>{error&&<p className="auth-error" role="alert">{error}</p>}<button className="action-button primary" disabled={working}>{working?'잠시만 기다려주세요…':register?'계정 만들기':'로그인'}</button></form><small>현재 브라우저의 문서는 그대로 보관됩니다.</small></section></div>}
+    <Floating open={authOpen} onOpenChange={o=>{if(!o&&!working)setAuthOpen(false);}}>
+      <Floating.Content as={Surface} fill="raised" radius="md" padding="2xl" width={phone?'xl':'measure.xs'} maxWidth="full" presentation="modal" aria-label={register?'회원가입':'로그인'} initialFocusRef={firstField}>
+        <Stack gap="xl">
+          <Inline justify="between" align="start" gap="md"><Wordmark/><IconButton as={Floating.Close} size="xs" variant="ghost" aria-label="로그인 창 닫기"><Glyph name="x"/></IconButton></Inline>
+          <Stack gap="sm"><Serif as="h1" variant="title" strong={false}>{register?'글이 머무를 계정을 만드세요':'당신의 글을 이어가세요'}</Serif><Text as="p" variant="caption" ink="secondary">여러 노트를 모아두고, 어느 기기에서든 이어 쓰세요.</Text></Stack>
+          <SegmentControl aria-label="로그인 방식" fullWidth value={register?'register':'login'} onValueChange={v=>{setRegister(v==='register');setError('');}}><SegmentControl.Item value="login">로그인</SegmentControl.Item><SegmentControl.Item value="register">회원가입</SegmentControl.Item></SegmentControl>
+          <Stack as="form" gap="lg" onSubmit={login}>
+            <FormField label="아이디"><Field ref={firstField} name="username" size="md" required minLength={3} maxLength={32} pattern="[a-zA-Z0-9][a-zA-Z0-9_.\-]{2,31}" autoComplete="username" placeholder="영문·숫자 3~32자"/></FormField>
+            <FormField label="비밀번호"><Field name="password" type="password" size="md" required minLength={10} maxLength={128} autoComplete={register?'new-password':'current-password'} placeholder="10자 이상"/></FormField>
+            {error&&<Text as="p" variant="caption" ink="error" role="alert">{error}</Text>}
+            <Button type="submit" size="md" fullWidth loading={working} loadingLabel="잠시만 기다려주세요…">{working?'잠시만 기다려주세요…':register?'계정 만들기':'로그인'}</Button>
+          </Stack>
+          <Stack align="center"><Text as="p" variant="label" strong={false} ink="secondary">현재 브라우저의 문서는 그대로 보관됩니다.</Text></Stack>
+        </Stack>
+      </Floating.Content>
+    </Floating>
   </div>;
 }
