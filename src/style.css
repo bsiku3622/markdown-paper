@@ -397,3 +397,14 @@
 .export-document {
   min-height: 0;
 }
+
+.save-dot {
+  flex-shrink: 0;
+  width: var(--pui-shape-space-xs);
+  height: var(--pui-shape-space-xs);
+  border-radius: var(--pui-shape-radius-full);
+  background: var(--pui-color-ink-tertiary);
+}
+.save-dot-pending {
+  opacity: var(--pui-color-opacity-disabled);
+}

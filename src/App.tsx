@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  Badge,
   Box,
   Button,
   Divider,
@@ -814,7 +813,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   const mm = (value: string, min: number, max: number) => Math.max(min, Math.min(max, Number(value)));
   return (
     <div className="app" style={style}>
-      <Surface as="header" fill="raised" border="bottom" paddingX={phone ? "md" : "xl"} paddingY="sm">
+      <Surface as="header" fill="raised" border="bottom" paddingX={phone ? "md" : "xl"} paddingY="lg">
         <Grid columns={phone ? "auto minmax(0, 1fr) auto" : "auto auto minmax(0, 1fr) auto"} gap={phone ? "sm" : "lg"} align="stretch">
           <Inline align="center">
             <Brand onHome={account.home} />
@@ -833,7 +832,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
             </Box>
             <Box hideBelow="lg">
               <Inline gap="xs" align="center" aria-live="polite">
-                <Badge dot size="xs" variant="ghost" accent={isSaved ? "primary" : "warning"} aria-label="" />
+                <span aria-hidden className={isSaved ? "save-dot" : "save-dot save-dot-pending"} />
                 <Text as="span" variant="label" strong={false} ink="tertiary">{account.saveLabel || (saved ? "이 기기에 저장됨" : "저장 중")}</Text>
               </Inline>
             </Box>
