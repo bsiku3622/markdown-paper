@@ -5,10 +5,8 @@ import { getSchema } from '@tiptap/core';
 import { MarkdownManager } from '@tiptap/markdown';
 import { prosemirrorJSONToYXmlFragment, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap';
 import { documentExtensions } from '../src/extensions.ts';
-import { normalize } from '../src/document.ts';
+import { normalize, SHARED_SETTINGS } from '../src/document.ts';
 
-// Page settings shared by everyone editing a note. Zoom stays per viewer.
-export const SHARED_SETTINGS = ['paper', 'width', 'height', 'landscape', 'mode', 'margin', 'sizePt', 'leading'];
 const UUID = /^[a-f0-9-]{36}$/;
 // The same schema as the editor, so server-side conversion matches what clients render.
 const extensions = documentExtensions();

@@ -17,6 +17,7 @@ type Props = {
   guestOpen: () => void;
   login: () => void;
   logout: () => void;
+  profile: () => void;
   remove: (note: NoteSummary) => void;
 };
 
@@ -28,7 +29,10 @@ const Card = ({ note, working, open, remove }: { note: NoteSummary; working: boo
         <Surface as="a" href={documentPath(note.id)} aria-label={`${title} 열기`} padding="lg" hoverable className="plain-link" onClick={plainClick(() => !working && open())}>
           <Surface fill="raised" border radius="sm" padding="lg" height="md" overflow="hidden">
             <Stack gap="md">
-              <Glyph name="file-text" size="subheading" ink="secondary" />
+              <Inline justify="between" align="center">
+                <Glyph name={note.shared || note.owner ? "users" : "file-text"} size="subheading" ink="secondary" />
+                {note.owner ? <Avatar name={`${note.owner.nickname}님의 노트`} src={note.owner.avatar} size="sm" /> : null}
+              </Inline>
               <Serif variant="lead" lines>{title}</Serif>
             </Stack>
           </Surface>
@@ -37,12 +41,12 @@ const Card = ({ note, working, open, remove }: { note: NoteSummary; working: boo
           <Inline justify="between" align="center" gap="sm">
             <Stack minWidth={0}>
               <Text as="h3" variant="body" strong truncate>{title}</Text>
-              <Text as="p" variant="caption" ink="secondary">
-                {new Date(note.updatedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })} 수정
+              <Text as="p" variant="caption" ink="secondary" truncate>
+                {note.owner ? `${note.owner.nickname}님이 공유 · ${note.role === "viewer" ? "보기만" : "편집 가능"}` : `${new Date(note.updatedAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })} 수정${note.shared ? " · 공유 중" : ""}`}
               </Text>
             </Stack>
-            <IconButton size="xs" variant="ghost" aria-label={`${note.title || "문서"} 삭제`} disabled={working} onClick={remove}>
-              <Glyph name="trash-2" ink="tertiary" />
+            <IconButton size="xs" variant="ghost" aria-label={`${note.title || "문서"} ${note.role === "owner" ? "삭제" : "나가기"}`} disabled={working} onClick={remove}>
+              <Glyph name={note.role === "owner" ? "trash-2" : "log-out"} ink="tertiary" />
             </IconButton>
           </Inline>
         </Surface>
@@ -51,7 +55,7 @@ const Card = ({ note, working, open, remove }: { note: NoteSummary; working: boo
   );
 };
 
-export function Home({ user, notes, guest, working, open, create, guestOpen, login, logout, remove }: Props) {
+export function Home({ user, notes, guest, working, open, create, guestOpen, login, logout, profile, remove }: Props) {
   const wide = useMedia("(min-width: 768px)");
   const [search, setSearch] = useState(""),
     [sort, setSort] = useState("recent");
@@ -66,8 +70,10 @@ export function Home({ user, notes, guest, working, open, create, guestOpen, log
             <Brand />
             {user ? (
               <Inline gap="sm" align="center">
-                <Avatar name={user.username} />
-                <Text as="span">{user.username}</Text>
+                <Button variant="ghost" size="sm" aria-label="프로필" onClick={profile}>
+                  <Avatar name={user.nickname} src={user.avatar} />
+                  {user.nickname}
+                </Button>
                 <IconButton variant="ghost" size="sm" aria-label="로그아웃" disabled={working} onClick={logout}>
                   <Glyph name="log-out" />
                 </IconButton>

@@ -20,6 +20,9 @@ export async function capture(editor: HTMLElement, s: Settings, pages: number) {
   }));
   node.querySelectorAll(".ProseMirror-separator").forEach(el => el.remove());
   node.querySelectorAll("[data-resize-handle]").forEach(el => el.remove());
+  // Other people's carets and selections are presence, not document content.
+  node.querySelectorAll(".collaboration-carets__caret").forEach(el => el.remove());
+  node.querySelectorAll<HTMLElement>(".ProseMirror-yjs-selection").forEach(el => { el.classList.remove("ProseMirror-yjs-selection"); el.style.removeProperty("background-color"); });
   const { width, height } = dimensions(s);
   const px = 96 / 25.4;
   const palette = getComputedStyle(document.documentElement);

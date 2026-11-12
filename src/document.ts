@@ -19,6 +19,8 @@ export type DocumentData = {
   settings: Settings;
   updatedAt: number;
 };
+// Page settings shared by everyone editing a live note; zoom stays with each viewer.
+export const SHARED_SETTINGS = ["paper", "width", "height", "landscape", "mode", "margin", "sizePt", "leading"] as const;
 export const DEFAULTS: Settings = {
   paper: "a4",
   width: 210,

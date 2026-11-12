@@ -46,7 +46,8 @@ export function documentExtensions(options: DocumentExtensionOptions = {}): AnyE
   return [
     StarterKit.configure({
       link: { openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer" } },
-      ...(options.history === false ? { undoRedo: false } : {}),
+      // Live documents use Yjs undo and a trailing paragraph that ignores remote changes (see live.ts).
+      ...(options.history === false ? { undoRedo: false, trailingNode: false } : {}),
     }),
     Markdown,
     TableKit.configure({ table: { resizable: true } }),

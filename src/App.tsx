@@ -28,6 +28,8 @@ import {
 } from "@studio-baeks/paper-ui";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
+import Collaboration from "@tiptap/extension-collaboration";
+import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import { documentExtensions, HIGHLIGHT_COLORS, TEXT_COLORS } from "./extensions";
 import { Glyph, type GlyphName } from "./glyphs";
 import { Brand } from "./chrome";
@@ -39,11 +41,14 @@ import {
   normalize,
   statistics,
   saveFile,
+  SHARED_SETTINGS,
   type Settings,
   type DocumentData,
 } from "./document";
 import { portableDocument, isPrivateImage } from "./portable-document";
-import { Account, type AccountControls } from "./Account";
+import { Account, type AccountControls, type LiveNote } from "./Account";
+import { LiveTrailingNode, openSession, useLiveStatus, useOnline, userColor, type LiveSession } from "./live";
+import { Presence, SharePanel } from "./Share";
 import { PaperTypography } from "./typography";
 import { pagination, type PageLayout } from "./pagination";
 import { image } from "./export-document";
@@ -186,7 +191,11 @@ export default function App() {
     };
   }, []);
   return loaded ? (
-    <Account initial={loaded}>{(document, key, account) => <Workspace key={key} initial={document} account={account} />}</Account>
+    <Account initial={loaded}>
+      {(document, key, account, live) =>
+        live ? <LiveWorkspace key={key} initial={document} account={account} live={live} /> : <Workspace key={key} initial={document} account={account} />
+      }
+    </Account>
   ) : (
     <div className="loading">
       <span className="wordmark">Paperdown</span>
@@ -194,8 +203,64 @@ export default function App() {
     </div>
   );
 }
-function Workspace({ initial, account }: { initial: DocumentData; account: AccountControls }) {
-  const [doc, setDoc] = useState(initial),
+const zoomKey = (id: string) => `paperdown-zoom:${id}`;
+function storedZoom(id: string): Settings["zoom"] | undefined {
+  try {
+    const value = localStorage.getItem(zoomKey(id));
+    return value === "fit" ? "fit" : value ? normalize({ settings: { zoom: Number(value) } }).settings.zoom : undefined;
+  } catch {
+    return undefined;
+  }
+}
+// Account notes are edited live. Each mount owns one Yjs session (StrictMode remounts get a fresh one).
+// The editor mounts only after the first sync: an editor bound to an empty shared document
+// fills it with a blank paragraph, which would then be merged into everyone's note.
+function LiveWorkspace({ initial, account, live }: { initial: DocumentData; account: AccountControls; live: LiveNote }) {
+  const [state, setState] = useState<{ session: LiveSession; key: number } | null>(null),
+    [denied, setDenied] = useState(false);
+  useEffect(() => {
+    const session = openSession(live.note.id, live.user.id);
+    let shown = false,
+      timer: ReturnType<typeof setTimeout> | undefined;
+    const show = () => {
+      if (shown) return;
+      shown = true;
+      setState((s) => ({ session, key: (s?.key || 0) + 1 }));
+    };
+    session.provider.on("synced", show);
+    session.provider.on("authenticationFailed", () => !shown && setDenied(true));
+    // Offline, a copy kept on this device opens after a short wait for the server.
+    void session.local.whenSynced.then(() => {
+      if (session.ydoc.getXmlFragment("default").length) timer = setTimeout(show, 2500);
+    });
+    return () => {
+      clearTimeout(timer);
+      setState(null);
+      setDenied(false);
+      session.destroy();
+    };
+  }, [live.note.id, live.user.id]);
+  if (state) return <Workspace key={state.key} initial={initial} account={account} live={live} session={state.session} />;
+  return (
+    <Stack align="center" justify="center" gap="lg" minHeight="viewport" padding="2xl">
+      {denied ? (
+        <>
+          <Text as="p" ink="secondary">이 노트에 접근할 수 없습니다. 공유가 해제되었거나 노트가 삭제되었습니다.</Text>
+          <Button variant="hairline" size="sm" onClick={account.home}>홈으로</Button>
+        </>
+      ) : (
+        <Inline gap="sm" align="center">
+          <Spinner size="inline" label="문서를 불러오는 중" />
+          <Text as="p" variant="caption" ink="tertiary">문서를 불러오는 중…</Text>
+        </Inline>
+      )}
+    </Stack>
+  );
+}
+function Workspace({ initial, account, live, session }: { initial: DocumentData; account: AccountControls; live?: LiveNote; session?: LiveSession }) {
+  const [doc, setDoc] = useState(() =>
+      live ? { ...initial, settings: { ...initial.settings, zoom: storedZoom(live.note.id) ?? initial.settings.zoom } } : initial,
+    ),
     [saved, setSaved] = useState(true),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(""),
@@ -253,6 +318,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
       ...documentExtensions({
         privateImage: isPrivateImage,
         resizable: true,
+        history: !session,
         math: {
           inlineOptions: {
             onClick: (node, pos) =>
@@ -281,9 +347,21 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
             : "글을 쓰거나 / 로 블록을 추가하세요",
       }),
       pagination(() => layout.current),
+      ...(session && live
+        ? [
+            Collaboration.configure({ document: session.ydoc, field: "default" }),
+            LiveTrailingNode,
+            CollaborationCaret.configure({
+              provider: session.provider,
+              user: { id: live.user.id, name: live.user.nickname, color: userColor(live.user.id) },
+            }),
+          ]
+        : []),
     ],
-    content: initial.content || initial.markdown,
-    contentType: initial.content ? "json" : "markdown",
+    // Live notes take their content from the shared Yjs document instead.
+    ...(session
+      ? { editable: false }
+      : { content: initial.content || initial.markdown, contentType: initial.content ? ("json" as const) : ("markdown" as const) }),
     editorProps: {
       attributes: {
         class: "document-content",
@@ -354,8 +432,64 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     const timer = setTimeout(() => setNotice(""), 5500);
     return () => clearTimeout(timer);
   }, [notice]);
+  const status = useLiveStatus(session),
+    online = useOnline(session, live?.user.id || ""),
+    readOnly = live?.note.role === "viewer",
+    // Once access is gone, editing tools are hidden as for viewers.
+    locked = readOnly || status.denied;
+  useEffect(() => {
+    editor?.setEditable(!session || (!status.denied && !readOnly), false);
+  }, [editor, session, status.denied, readOnly]);
+  // Title and page settings live beside the text in the shared document.
+  useEffect(() => {
+    if (!session) return;
+    const meta = session.ydoc.getMap("meta"),
+      shared = session.ydoc.getMap("settings");
+    const pull = () =>
+      setDoc((d) => {
+        const title = meta.get("title");
+        return {
+          ...d,
+          title: typeof title === "string" ? title : d.title,
+          settings: { ...normalize({ settings: { ...d.settings, ...shared.toJSON() } }).settings, zoom: d.settings.zoom },
+        };
+      });
+    meta.observe(pull);
+    shared.observe(pull);
+    pull();
+    return () => {
+      meta.unobserve(pull);
+      shared.unobserve(pull);
+    };
+  }, [session]);
+  // A nickname changed in the profile shows up on this caret for everyone without reopening.
+  useEffect(() => {
+    if (editor && session && live) editor.commands.updateUser({ id: live.user.id, name: live.user.nickname, color: userColor(live.user.id) });
+  }, [editor, session, live?.user.id, live?.user.nickname]);
+  const refreshNote = useRef(live?.refresh);
+  refreshNote.current = live?.refresh;
+  useEffect(() => {
+    if (!session) return;
+    // Every authentication after mount is a reconnect, often caused by a sharing change.
+    const reauthenticated = () => refreshNote.current?.();
+    session.provider.on("authenticated", reauthenticated);
+    return () => {
+      session.provider.off("authenticated", reauthenticated);
+    };
+  }, [session]);
+  useEffect(() => {
+    // Without access the server will never confirm pending changes, so there is nothing to wait for.
+    if (!session || status.denied) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (session.provider.hasUnsyncedChanges) event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [session, status.denied]);
   useEffect(() => {
     accountRef.current.changed(doc);
+    // Live notes are saved by the collaboration server as they change.
+    if (session) return;
     setSaved(false);
     const timer = setTimeout(() => {
       const snapshot = doc;
@@ -373,6 +507,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     return () => clearTimeout(timer);
   }, [doc]);
   useEffect(() => {
+    if (session) return;
     const flush = () => {
       saveSequence.current = saveSequence.current
         .catch(() => {})
@@ -469,11 +604,31 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     "-",
   );
   function settings(patch: Partial<Settings>) {
+    if (session && live) {
+      const { zoom, ...rest } = patch;
+      if (zoom !== undefined) {
+        setDoc((d) => ({ ...d, settings: { ...d.settings, zoom } }));
+        try {
+          localStorage.setItem(zoomKey(live.note.id), String(zoom));
+        } catch {
+          /* Zoom is a per-browser convenience. */
+        }
+      }
+      const shared = session.ydoc.getMap("settings");
+      session.ydoc.transact(() => {
+        for (const [key, value] of Object.entries(rest)) shared.set(key, value);
+      });
+      return;
+    }
     setDoc((d) => ({
       ...d,
       settings: { ...d.settings, ...patch },
       updatedAt: Date.now(),
     }));
+  }
+  function setTitle(title: string) {
+    if (session) session.ydoc.getMap("meta").set("title", title);
+    else setDoc((d) => ({ ...d, title, updatedAt: Date.now() }));
   }
   async function downloadDocument() {
     try {
@@ -521,7 +676,9 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
       if (!data.content && file.name.endsWith(".json"))
         throw new Error("올바른 Paperdown 문서 파일이 아닙니다.");
       if (data.content) editor?.schema.nodeFromJSON(data.content).check();
-      openDialog({ kind: "import", data });
+      // Replacing a shared note would overwrite everyone's work; open the file as a new note.
+      if (session) account.create(data);
+      else openDialog({ kind: "import", data });
     } catch (e) {
       flash(e instanceof Error ? e.message : "파일을 열지 못했습니다.");
     }
@@ -817,7 +974,15 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
     }
   }
   if (!editor) return null;
-  const isSaved = account.saveLabel ? account.saveLabel === "계정에 저장됨" : saved;
+  const saveLabel = !session
+    ? saved ? "이 기기에 저장됨" : "저장 중"
+    : status.denied ? "접근할 수 없음"
+    : !status.connected ? "오프라인 · 이 기기에 보관됨"
+    : !status.synced ? "연결 중…"
+    : status.unsynced ? "저장 중…"
+    : "계정에 저장됨";
+  const isSaved = session ? saveLabel === "계정에 저장됨" : saved;
+  const people = live ? [live.note.owner || live.user, ...(live.note.members || [])] : [];
   const shownDialog = dialog || lastDialog.current;
   if (dialog) lastDialog.current = dialog;
   const withField = shownDialog?.kind === "link" || shownDialog?.kind === "math";
@@ -838,20 +1003,29 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 aria-label="문서 이름"
                 placeholder="새로운 문서"
                 value={doc.title}
-                onChange={(e) => setDoc((d) => ({ ...d, title: e.target.value, updatedAt: Date.now() }))}
+                readOnly={locked}
+                onChange={(e) => setTitle(e.target.value)}
               />
             </Box>
             <Box hideBelow="lg">
               <Inline gap="xs" align="center" aria-live="polite">
                 <span aria-hidden className={isSaved ? "save-dot" : "save-dot save-dot-pending"} />
-                <Text as="span" variant="label" strong={false} ink="tertiary">{account.saveLabel || (saved ? "이 기기에 저장됨" : "저장 중")}</Text>
+                <Text as="span" variant="label" strong={false} ink="tertiary">{saveLabel}</Text>
               </Inline>
             </Box>
           </Inline>
           <Inline align="center" gap={phone ? "xs" : "sm"}>
+            {live && session ? (
+              <>
+                <Box hideBelow="md">
+                  <Presence people={people} online={online} />
+                </Box>
+                <SharePanel note={live.note} me={live.user} online={online} setMembers={live.setMembers} leave={live.leave} />
+              </>
+            ) : null}
             {account.accountButton}
             <Box hideBelow="md">
-              <IconButton variant="ghost" size="xs" aria-label="새 문서" title="새 문서" onClick={() => (account.upload ? account.create() : openDialog({ kind: "new" }))}>
+              <IconButton variant="ghost" size="xs" aria-label="새 문서" title="새 문서" onClick={() => (session ? account.create() : openDialog({ kind: "new" }))}>
                 <Glyph name="file-plus-2" ink="secondary" />
               </IconButton>
             </Box>
@@ -915,9 +1089,23 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
           </Inline>
         </Surface>
       )}
+      {status.denied ? (
+        <Surface fill="sunken" border="bottom" paddingX="xl" paddingY="sm" role="alert">
+          <Inline justify="center" align="center" gap="md" wrap>
+            <Text as="span" variant="label" strong={false} ink="secondary">이 노트에 더 이상 접근할 수 없습니다. 공유가 해제되었거나 노트가 삭제되었습니다.</Text>
+            <Button variant="ghost" size="xs" onClick={account.home}>홈으로</Button>
+          </Inline>
+        </Surface>
+      ) : null}
       <Surface as="div" role="toolbar" aria-label="문서 도구 모음" fill="raised" border="bottom" elevation="sticky" top="none" paddingX="xl" paddingY="sm">
         <Box overflowX={phone ? "auto" : undefined}>
           <Inline justify="between" align="center" gap="md" wrap={!phone} minWidth={phone ? "max-content" : undefined}>
+            {locked ? (
+              <Inline gap="sm" align="center">
+                <Glyph name="users" ink="secondary" />
+                <Text as="span" variant="label" strong={false} ink="secondary">{status.denied ? "더 이상 편집할 수 없습니다. 지금 화면은 내보내거나 복사할 수 있습니다." : "보기 권한으로 공유받은 노트입니다. 내보내기와 복사는 할 수 있습니다."}</Text>
+              </Inline>
+            ) : (
             <Inline align="stretch" gap="sm" wrap={!phone}>
               <Inline gap="xs" align="center">
                 <Tool label="실행 취소 (⌘Z)" glyph="undo-2" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
@@ -1029,7 +1217,9 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 <Tool label="구분선" glyph="minus" onClick={() => editor.chain().focus().setHorizontalRule().run()} />
               </Inline>
             </Inline>
+            )}
             <Inline align="center" gap="sm">
+              {locked ? null : (
               <Floating>
                 <Button as={Floating.Trigger} variant="ghost" size="xs">
                   <Glyph name="settings-2" />
@@ -1109,6 +1299,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                   </Stack>
                 </Floating.Content>
               </Floating>
+              )}
               <Select
                 aria-label="화면 배율"
                 size="xs"
@@ -1133,7 +1324,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
               {s.paper === "custom" ? "CUSTOM" : s.paper.toUpperCase()} · {s.mode === "pages" ? `${pages} PAGES` : "CONTINUOUS"}
             </Text>
             <Box hideBelow="md">
-              <Text as="span" variant="label" strong={false} ink="tertiary">클릭해서 바로 쓰세요</Text>
+              <Text as="span" variant="label" strong={false} ink="tertiary">{readOnly ? "보기 전용" : "클릭해서 바로 쓰세요"}</Text>
             </Box>
           </Inline>
           <div className={`paper-stack ${s.mode === "pages" ? "paginated" : "continuous"}`} style={{ zoom, minHeight: s.mode === "pages" ? pages * height + (pages - 1) * 24 : 0 }}>
@@ -1176,7 +1367,7 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
             </Inline>
           </Inline>
           <Box hideBelow="lg">
-            <Quiet>{account.saveLabel ? "계정에 자동 저장" : "이 브라우저에 자동 저장"}</Quiet>
+            <Quiet>{!session ? "이 브라우저에 자동 저장" : readOnly ? "보기 전용 · 바뀌는 내용이 바로 반영됩니다" : "함께 쓰는 내용이 계정에 바로 저장됩니다"}</Quiet>
           </Box>
         </Inline>
       </Surface>

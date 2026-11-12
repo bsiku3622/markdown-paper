@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
-import { Badge, Box, Inline, Link, Stack, Text } from "@studio-baeks/paper-ui";
+import { Box, Inline, Link, Stack, Text } from "@studio-baeks/paper-ui";
 import type { Ink, TextVariant } from "@studio-baeks/paper-ui/tokens";
 import { Glyph } from "./glyphs";
 import { useMedia } from "./hooks";
@@ -43,10 +43,10 @@ export const Brand = ({ onHome }: { onHome?: () => void }) => {
   );
 };
 
-export const Avatar = ({ name }: { name: string }) => (
-  <Badge size="lg" shape="rounded" variant="hairline" role="img" aria-label={name}>
-    {Array.from(name.trim())[0]?.toUpperCase() ?? "?"}
-  </Badge>
+export const Avatar = ({ name, src, size = "md", ring }: { name: string; src?: string | null; size?: "sm" | "md" | "xl"; ring?: string }) => (
+  <span className={`avatar avatar-${size}`} role="img" aria-label={name} title={name} style={ring ? { boxShadow: `0 0 0 2px var(--pui-color-bg-raised), 0 0 0 4px ${ring}` } : undefined}>
+    {src ? <img src={src} alt="" referrerPolicy="no-referrer" draggable={false} /> : (Array.from(name.trim())[0]?.toUpperCase() ?? "?")}
+  </span>
 );
 
 export const Column = ({ children }: { children: ReactNode }) => (
