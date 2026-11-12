@@ -20,7 +20,7 @@ test("migrates an existing Markdown draft and pixel typography without losing te
   assert.equal(d.settings.font, "myeongjo");
   assert.deepEqual(dimensions(d.settings), { width: 148, height: 210 });
 });
-test("migrates legacy Source Serif marks without changing text or other formatting", () => {
+test("drops legacy Source Serif family marks without changing text or other formatting", () => {
   const content = {
     type: "doc",
     content: [{ type: "paragraph", content: [{
@@ -31,28 +31,28 @@ test("migrates legacy Source Serif marks without changing text or other formatti
   const d = normalize({ content, settings: { font: "serif" } });
   const text = d.content!.content![0].content![0];
   assert.equal(text.text, "기존 문장");
-  assert.equal(text.marks![0].attrs!.fontFamily, FONTS.myeongjo);
+  assert.equal(text.marks![0].attrs!.fontFamily, undefined);
   assert.equal(text.marks![0].attrs!.fontSize, "11.25pt");
   assert.equal(text.marks![1].type, "bold");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Source Serif/);
 });
-test("migrates legacy serif marks to KoPub typography", () => {
+test("drops legacy serif family marks for the fixed book typeface", () => {
   const content = {type: "doc", content: [{type: "paragraph", content: [{
     type: "text", text: "Closed System인 이유",
     marks: [{type: "textStyle", attrs: {fontFamily: '"Times New Roman", Times, "Noto Serif KR", serif', fontSize: "10pt"}}, {type: "italic"}],
   }]}]};
   const text = normalize({content}).content!.content![0].content![0];
-  assert.equal(text.marks![0].attrs!.fontFamily, FONTS.myeongjo);
+  assert.equal(text.marks![0].attrs!.fontFamily, undefined);
   assert.equal(text.marks![0].attrs!.fontSize, "10pt");
   assert.equal(text.marks![1].type, "italic");
   assert.equal(text.text, "Closed System인 이유");
   assert.match(content.content[0].content[0].marks[0].attrs!.fontFamily!, /Times New Roman/);
 });
-test("migrates Nanum and Latin Modern marks to KoPub typography", () => {
+test("drops Nanum and Latin Modern family marks", () => {
   for (const fontFamily of ['"Nanum Myeongjo", "Noto Serif KR", serif', '"Latin Modern Roman", "Nanum Myeongjo", serif']) {
     const content = {type: "doc", content: [{type: "paragraph", content: [{type: "text", text: "English와 한글", marks: [{type: "textStyle", attrs: {fontFamily}}]}]}]};
     const text = normalize({content}).content!.content![0].content![0];
-    assert.equal(text.marks![0].attrs!.fontFamily, FONTS.myeongjo);
+    assert.equal(text.marks![0].attrs!.fontFamily, undefined);
     assert.equal(text.text, "English와 한글");
     assert.equal(content.content[0].content[0].marks[0].attrs.fontFamily, fontFamily);
   }
@@ -129,4 +129,12 @@ test("an older tab cannot overwrite a newer saved document", () => {
   assert.equal(isCurrentSnapshot({ updatedAt: 200 }, { updatedAt: 200 }), true);
   assert.equal(isCurrentSnapshot({ updatedAt: 200 }, { updatedAt: 300 }), true);
   assert.equal(isCurrentSnapshot(undefined, { updatedAt: 100 }), true);
+});
+test("moves Gothic documents to the fixed book typeface", () => {
+  const content = {type: "doc", content: [{type: "paragraph", content: [{type: "text", text: "고딕 문장", marks: [{type: "textStyle", attrs: {fontFamily: '"Pretendard Variable", sans-serif', color: "#c80020"}}]}]}]};
+  const d = normalize({content, settings: {font: "sans"}});
+  const mark = d.content!.content![0].content![0].marks![0];
+  assert.equal(d.settings.font, "myeongjo");
+  assert.equal(FONTS[d.settings.font], FONTS.myeongjo);
+  assert.deepEqual(mark.attrs, {color: "#c80020"});
 });

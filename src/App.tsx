@@ -27,17 +27,8 @@ import {
   Text,
 } from "@studio-baeks/paper-ui";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { Markdown } from "@tiptap/markdown";
-import { TableKit } from "@tiptap/extension-table";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import TiptapImage from "@tiptap/extension-image";
-import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
-import Mathematics from "@tiptap/extension-mathematics";
-import { TextStyleKit } from "@tiptap/extension-text-style";
-import Highlight from "@tiptap/extension-highlight";
+import { documentExtensions, HIGHLIGHT_COLORS, TEXT_COLORS } from "./extensions";
 import { Glyph, type GlyphName } from "./glyphs";
 import { Brand } from "./chrome";
 import { useMedia } from "./hooks";
@@ -51,7 +42,6 @@ import {
   type Settings,
   type DocumentData,
 } from "./document";
-import { mergeAttributes } from "@tiptap/core";
 import { portableDocument, isPrivateImage } from "./portable-document";
 import { Account, type AccountControls } from "./Account";
 import { PaperTypography } from "./typography";
@@ -123,6 +113,51 @@ const ExportRow = ({ glyph, title, hint, tag, run }: { glyph: GlyphName; title: 
     {tag ? <Text as="span" variant="label" strong={false} ink="tertiary">{tag}</Text> : null}
   </Button>
 );
+const Swatch = ({ label, color, kind, selected, run }: { label: string; color?: string; kind: "text" | "highlight"; selected: boolean; run: () => void }) => (
+  <IconButton as={Floating.Close} size="xs" variant="ghost" aria-label={label} title={label} aria-pressed={selected} onMouseDown={(e: MouseEvent) => e.preventDefault()} onClick={run}>
+    <span
+      aria-hidden
+      className={`swatch swatch-${kind}${color ? "" : " swatch-none"}${selected ? " swatch-selected" : ""}`}
+      style={color ? (kind === "text" ? { color } : { background: color }) : undefined}
+    >
+      {kind === "text" ? "가" : null}
+    </span>
+  </IconButton>
+);
+function ColorMenu({ text, highlight, setText, setHighlight }: { text?: string; highlight?: string; setText: (color?: string) => void; setHighlight: (color?: string) => void }) {
+  return (
+    <Floating>
+      <IconButton as={Floating.Trigger} size="xs" variant="ghost" aria-label="글자색과 형광펜" title="글자색과 형광펜" onMouseDown={(e: MouseEvent) => e.preventDefault()}>
+        <span className="color-glyph" aria-hidden>
+          <Glyph name="baseline" ink="secondary" />
+          <span className="color-glyph-bar" style={{ background: text || "var(--pui-color-ink-primary)" }} />
+        </span>
+      </IconButton>
+      <Floating.Content as={Surface} fill="raised" radius="md" padding="md" placement="bottom start" restoreFocus={false} aria-label="글자색과 형광펜">
+        <Stack gap="md">
+          <Stack gap="xs">
+            <Text as="span" variant="label" strong={false} ink="tertiary">글자색</Text>
+            <Inline gap="xs" role="group" aria-label="글자색">
+              <Swatch label="기본 글자색" kind="text" selected={!text} run={() => setText()} />
+              {TEXT_COLORS.map((c) => (
+                <Swatch key={c.value} label={`${c.name} 글자`} color={c.value} kind="text" selected={text?.toLowerCase() === c.value} run={() => setText(c.value)} />
+              ))}
+            </Inline>
+          </Stack>
+          <Stack gap="xs">
+            <Text as="span" variant="label" strong={false} ink="tertiary">형광펜</Text>
+            <Inline gap="xs" role="group" aria-label="형광펜">
+              <Swatch label="형광펜 없음" kind="highlight" selected={!highlight} run={() => setHighlight()} />
+              {HIGHLIGHT_COLORS.map((c) => (
+                <Swatch key={c.value} label={`${c.name} 형광펜`} color={c.value} kind="highlight" selected={highlight?.toLowerCase() === c.value} run={() => setHighlight(c.value)} />
+              ))}
+            </Inline>
+          </Stack>
+        </Stack>
+      </Floating.Content>
+    </Floating>
+  );
+}
 const OptionRow = ({ label, children }: { label: string; children: ReactNode }) => (
   <Inline justify="between" align="center" gap="md">
     <Text as="span" variant="caption" ink="secondary">{label}</Text>
@@ -215,53 +250,35 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
   }
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        link: {
-          openOnClick: false,
-          HTMLAttributes: { rel: "noopener noreferrer" },
+      ...documentExtensions({
+        privateImage: isPrivateImage,
+        resizable: true,
+        math: {
+          inlineOptions: {
+            onClick: (node, pos) =>
+              openDialog({
+                kind: "math",
+                value: node.attrs.latex,
+                position: pos,
+                inline: true,
+              }),
+          },
+          blockOptions: {
+            onClick: (node, pos) =>
+              openDialog({
+                kind: "math",
+                value: node.attrs.latex,
+                position: pos,
+              }),
+          },
         },
       }),
-      Markdown,
       PaperTypography,
-      TableKit.configure({ table: { resizable: true } }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      TiptapImage.extend({
-        renderHTML({ HTMLAttributes }) {
-          return ["img", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {crossorigin: isPrivateImage(HTMLAttributes.src || "") ? "use-credentials" : "anonymous"})];
-        },
-      }).configure({
-        allowBase64: true,
-        HTMLAttributes: { crossorigin: "anonymous" },
-      }),
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      TextStyleKit,
-      Highlight.configure({ HTMLAttributes: { class: "text-highlight" } }),
       Placeholder.configure({
         placeholder: ({ node }) =>
           node.type.name === "heading"
             ? "제목"
             : "글을 쓰거나 / 로 블록을 추가하세요",
-      }),
-      Mathematics.configure({
-        katexOptions: { throwOnError: false },
-        inlineOptions: {
-          onClick: (node, pos) =>
-            openDialog({
-              kind: "math",
-              value: node.attrs.latex,
-              position: pos,
-              inline: true,
-            }),
-        },
-        blockOptions: {
-          onClick: (node, pos) =>
-            openDialog({
-              kind: "math",
-              value: node.attrs.latex,
-              position: pos,
-            }),
-        },
       }),
       pagination(() => layout.current),
     ],
@@ -592,11 +609,6 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
       setBusy("");
     }
   }
-  function applyFont(value: Settings["font"]) {
-    if (!editor) return;
-    if (editor.state.selection.empty) settings({ font: value });
-    else editor.chain().focus().setFontFamily(FONTS[value]).run();
-  }
   function applySize(value: string) {
     const size = Number(value);
     if (!Number.isFinite(size) || size < 6 || size > 96) {
@@ -635,11 +647,10 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
         : editor?.isActive("codeBlock")
           ? "code"
           : "p";
-  const fontAttr = editor?.getAttributes("textStyle").fontFamily as
-    string | undefined;
-  const fontValue = fontAttr
-    ? Object.entries(FONTS).find(([, v]) => v === fontAttr)?.[0] || s.font
-    : s.font;
+  const textColor = editor?.getAttributes("textStyle").color as string | undefined,
+    highlightColor = editor?.isActive("highlight")
+      ? (editor.getAttributes("highlight").color as string | undefined) || "default"
+      : undefined;
   const sizeValue = String(
     editor?.getAttributes("textStyle").fontSize || `${s.sizePt}pt`,
   ).replace("pt", "");
@@ -931,10 +942,6 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                   <Select.Option value="h3">제목 3</Select.Option>
                   <Select.Option value="code">코드 블록</Select.Option>
                 </Select>
-                <Select aria-label="서체" size="xs" value={fontValue} onChange={(e) => applyFont(e.target.value as Settings["font"])}>
-                  <Select.Option value="myeongjo">명조</Select.Option>
-                  <Select.Option value="sans">고딕</Select.Option>
-                </Select>
                 <Box width="sm">
                   <Field
                     key={`${sizeValue}-${editor.state.selection.empty}`}
@@ -968,6 +975,12 @@ function Workspace({ initial, account }: { initial: DocumentData; account: Accou
                 <Tool label="기울임 (⌘I)" glyph="italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} />
                 <Tool label="취소선" glyph="strikethrough" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} />
                 <Tool label="강조" glyph="highlighter" active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} />
+                <ColorMenu
+                  text={textColor}
+                  highlight={highlightColor}
+                  setText={(color) => (color ? editor.chain().focus().setColor(color).run() : editor.chain().focus().unsetColor().run())}
+                  setHighlight={(color) => (color ? editor.chain().focus().setHighlight({ color }).run() : editor.chain().focus().unsetHighlight().run())}
+                />
                 <Tool label="인라인 코드" glyph="code-xml" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} />
                 <Tool label="링크" glyph="link" active={editor.isActive("link")} onClick={() => openDialog({ kind: "link", value: editor.getAttributes("link").href || "" })} />
               </Inline>

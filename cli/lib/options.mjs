@@ -7,7 +7,6 @@ Usage: paperdown-pdf <input.md|input.paperdown.json|-> [options]
 
   -o, --output PATH     Output PDF (default: next to input; - for stdout)
       --paper SIZE      a4, a5, letter, custom (Markdown default: a4)
-      --font FONT       myeongjo, sans (Markdown default: myeongjo)
       --mode MODE       pages, continuous (Markdown default: pages)
       --size PT         Body font size, 6–96 (default: 10)
       --margin MM       Page margin, 5–50 (default: 20)
@@ -23,14 +22,14 @@ Usage: paperdown-pdf <input.md|input.paperdown.json|-> [options]
   -h, --help            Show help
   -v, --version         Show version
 
-Myeongjo: KoPub Batang for Latin and Korean.
+Text: KoPub Batang for Latin and Korean.
 Uses the Paperdown native text PDF renderer; text is selectable and searchable.
 Document JSON keeps its saved page settings unless overridden.
 `;
 
 export function options(args, cwd = process.cwd()) {
   const { values, positionals } = parseArgs({args,allowPositionals:true,options:{
-    output:{type:'string',short:'o'},paper:{type:'string'},font:{type:'string'},mode:{type:'string'},
+    output:{type:'string',short:'o'},paper:{type:'string'},mode:{type:'string'},
     size:{type:'string'},margin:{type:'string'},leading:{type:'string'},width:{type:'string'},height:{type:'string'},
     landscape:{type:'boolean'},title:{type:'string'},'asset-dir':{type:'string'},'allow-remote':{type:'boolean'},
     browser:{type:'string'},force:{type:'boolean'},help:{type:'boolean',short:'h'},version:{type:'boolean',short:'v'},
@@ -38,7 +37,7 @@ export function options(args, cwd = process.cwd()) {
   if (values.help || values.version) return {values};
   if (positionals.length !== 1) throw new Error('Specify one input file, or - for stdin. Run paperdown-pdf --help.');
   const settings = {};
-  for (const [key,choices] of Object.entries({paper:['a4','a5','letter','custom'],font:['myeongjo','sans'],mode:['pages','continuous']})) {
+  for (const [key,choices] of Object.entries({paper:['a4','a5','letter','custom'],mode:['pages','continuous']})) {
     if (values[key]) {
       const value=values[key].toLowerCase();
       if (!choices.includes(value)) throw new Error(`--${key} must be ${choices.join(', ')}.`);

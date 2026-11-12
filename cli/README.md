@@ -2,7 +2,7 @@
 
 Convert Markdown or a portable Paperdown document into a selectable, searchable text PDF with the same typography, spacing, palette, task lists, tables, math, page breaks, and page numbers as Paperdown.
 
-Markdown defaults to A4 pages, Myeongjo (KoPub Batang for both Latin and Korean), 10pt text, 20mm margins, and 1.6 line height. Rich document JSON retains its stored settings unless a CLI option overrides them. KoPub Batang and Pretendard are bundled. Noto Serif KR provides fallback glyphs.
+Markdown defaults to A4 pages, KoPub Batang for both Latin and Korean text (the only document typeface), 10pt text, 20mm margins, and 1.6 line height. Rich document JSON retains its stored settings unless a CLI option overrides them. KoPub Batang and Pretendard (page numbers) are bundled. Noto Serif KR provides fallback glyphs.
 
 Convert a Markdown file and specify the output path:
 
@@ -10,10 +10,10 @@ Convert a Markdown file and specify the output path:
 paperdown-pdf notes.md -o notes.pdf
 ```
 
-Use Gothic text, landscape pages, or a single page fitted to the content:
+Use landscape pages or a single page fitted to the content:
 
 ```sh
-paperdown-pdf notes.md --font sans --landscape -o slides.pdf
+paperdown-pdf notes.md --landscape -o slides.pdf
 paperdown-pdf notes.md --mode continuous -o continuous.pdf
 paperdown-pdf document.paperdown.json --paper a4 --mode pages -o document.pdf
 ```

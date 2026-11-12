@@ -2,7 +2,7 @@
 
 A document editor for writing on paper. [Open Paperdown](https://paperdown.bsiku.dev).
 
-Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown is built on Paper UI (`@studio-baeks/paper-ui`) and uses its palette, Pretendard for Gothic text, and KoPub Batang for both Latin and Korean text in Myeongjo mode. Fonts are bundled, with Noto Serif KR providing fallback glyphs. Format selected text, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
+Write directly in the finished layout, with Markdown input shortcuts and a compact formatting toolbar. Paperdown is built on Paper UI (`@studio-baeks/paper-ui`) and uses its palette. Documents use one book typeface, KoPub Batang, for both Latin and Korean text; Gothic text was removed, and documents saved with it open in KoPub Batang. Fonts are bundled, with Noto Serif KR providing fallback glyphs. Format selected text, change its colour or highlight colour from a fixed print palette, add headings, lists, checklists, links, quotes, tables, images, and LaTeX math. Drag an image corner to resize it; the aspect ratio stays fixed and the width is limited to the text column. Slash commands and undo/redo keep editing close to the document. Typing `->` or `-->` produces `→`, `=>` or `==>` produces `⇒`, and `--` produces an em dash `—`. Code blocks and inline code preserve literal text; Backspace immediately after a substitution restores the typed sequence.
 
 ## Pages and exports
 
@@ -10,7 +10,7 @@ Choose A4, A5, Letter, or custom dimensions, portrait or landscape, margins, and
 
 Copy the document as an image or download PNG and a selectable, searchable text PDF. Paginated PDFs preserve the editor's actual line positions, page breaks, page dimensions, colors, and page numbers; screen zoom and gaps between sheets are excluded. The web API prints the prepared page DOM using sandboxed Chromium and the same bundled CSS/fonts as the CLI. It does not reparse Markdown or reflow a saved document into a different layout. PDF jobs are transient and are not saved to account storage. Web PDF downloads require an API connection; PNG exports remain local. Continuous PDFs use one page fitted to the content, up to 5 metres. Web PDF jobs allow up to 200 pages and 40MB of prepared HTML. PNG exports retain the 28,000 CSS-pixel canvas limit. Large indivisible blocks should be split manually when they exceed one page.
 
-Download a `.paperdown.json` file to preserve all rich formatting and embedded images, or `.md` for portable Markdown. Markdown does not preserve all font, alignment, or highlight attributes. Opening another document or starting a new one first downloads a backup of the current document.
+Download a `.paperdown.json` file to preserve all rich formatting and embedded images, or `.md` for portable Markdown. Markdown does not preserve text sizes, colours, highlights, alignment, or image sizes. Opening another document or starting a new one first downloads a backup of the current document.
 
 ## Storage and migration
 

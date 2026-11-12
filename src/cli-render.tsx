@@ -10,16 +10,7 @@ import '@fontsource/noto-serif-kr/600.css';
 import 'katex/dist/katex.min.css';
 import './style.css';
 import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
-import { Markdown } from '@tiptap/markdown';
-import { TableKit } from '@tiptap/extension-table';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import Image from '@tiptap/extension-image';
-import TextAlign from '@tiptap/extension-text-align';
-import { TextStyleKit } from '@tiptap/extension-text-style';
-import Highlight from '@tiptap/extension-highlight';
-import Mathematics from '@tiptap/extension-mathematics';
+import { documentExtensions } from './extensions';
 import { dimensions, FONTS, normalize, type DocumentData } from './document';
 import { pagination } from './pagination';
 import { preparePdf } from './pdf-document';
@@ -35,9 +26,7 @@ window.renderPaperdown=async value=> {
   const doc=normalize(value), s=doc.settings, dim=dimensions(s), px=96/25.4;
   const host=document.getElementById('paperdown-render')!;
   const editor=new Editor({element:host,editable:false,extensions:[
-    StarterKit,Markdown,TableKit.configure({table:{resizable:true}}),TaskList,TaskItem.configure({nested:true}),Image.configure({allowBase64:true}),
-    TextAlign.configure({types:['heading','paragraph']}),TextStyleKit,Highlight.configure({HTMLAttributes:{class:'text-highlight'}}),
-    Mathematics.configure({katexOptions:{throwOnError:false}}),
+    ...documentExtensions(),
     pagination(()=>({enabled:s.mode==='pages',height:dim.height*px,margin:s.margin*px,gap:24})),
   ],content:doc.content||doc.markdown,contentType:doc.content?'json':'markdown',editorProps:{attributes:{class:'document-content'}}});
   const node=editor.view.dom as HTMLElement;

@@ -19,6 +19,7 @@ export async function capture(editor: HTMLElement, s: Settings, pages: number) {
     if (isPrivateImage(img.src)) { img.src = await privateImageData(img.src); img.crossOrigin = "anonymous"; await img.decode(); }
   }));
   node.querySelectorAll(".ProseMirror-separator").forEach(el => el.remove());
+  node.querySelectorAll("[data-resize-handle]").forEach(el => el.remove());
   const { width, height } = dimensions(s);
   const px = 96 / 25.4;
   const palette = getComputedStyle(document.documentElement);

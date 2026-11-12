@@ -53,6 +53,8 @@ const GLYPHS = {
   "align-left": [["path",{"d":"M21 5H3"}],["path",{"d":"M15 12H3"}],["path",{"d":"M17 19H3"}]],
   "align-right": [["path",{"d":"M21 5H3"}],["path",{"d":"M21 12H9"}],["path",{"d":"M21 19H7"}]],
   "arrow-up-right": [["path",{"d":"M7 7h10v10"}],["path",{"d":"M7 17 17 7"}]],
+  // Lucide "baseline" without its rule; the colour bar below stands in for it.
+  "baseline": [["path",{"d":"m6 16 6-12 6 12"}],["path",{"d":"M8 12h8"}]],
   "bold": [["path",{"d":"M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"}]],
   "check": [["path",{"d":"M20 6 9 17l-5-5"}]],
   "chevron-down": [["path",{"d":"m6 9 6 6 6-6"}]],

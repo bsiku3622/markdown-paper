@@ -270,12 +270,56 @@
 .document-content img:not(.ProseMirror-separator) {
   display: block;
   max-width: 100%;
+  /* Width is the stored size; height always follows the image's own ratio. */
+  height: auto !important;
   max-height: var(--page-content-height);
   object-fit: contain;
   margin: 0.5em auto;
 }
 .document-content .ProseMirror-selectednode {
   outline: 2px solid var(--pui-color-ink-tertiary);
+}
+/* Resizable images: the container carries the block margin so the editor,
+   exports, and the CLI (plain <img>) occupy the same height. */
+.document-content [data-resize-container][data-node="image"] {
+  justify-content: center;
+  margin: 0.5em 0;
+}
+.document-content [data-resize-container] [data-resize-wrapper] {
+  max-width: 100%;
+}
+.document-content [data-resize-container] img:not(.ProseMirror-separator) {
+  margin: 0;
+}
+.document-content .ProseMirror-selectednode[data-resize-container] {
+  outline: none;
+}
+.document-content .ProseMirror-selectednode [data-resize-wrapper] {
+  outline: 2px solid var(--pui-color-ink-tertiary);
+}
+.document-content [data-resize-handle] {
+  width: 10px;
+  height: 10px;
+  margin: -5px;
+  box-sizing: border-box;
+  background: var(--pui-color-bg-raised);
+  border: 1.5px solid var(--pui-color-ink-secondary);
+  border-radius: 2px;
+  opacity: 0;
+  z-index: 2;
+}
+.document-content [data-resize-handle="top-left"],
+.document-content [data-resize-handle="bottom-right"] {
+  cursor: nwse-resize;
+}
+.document-content [data-resize-handle="top-right"],
+.document-content [data-resize-handle="bottom-left"] {
+  cursor: nesw-resize;
+}
+.document-content [data-resize-container]:hover [data-resize-handle],
+.document-content .ProseMirror-selectednode [data-resize-handle],
+.document-content [data-resize-state="true"] [data-resize-handle] {
+  opacity: 1;
 }
 .document-content table {
   width: 100%;
@@ -407,4 +451,39 @@
 }
 .save-dot-pending {
   opacity: var(--pui-color-opacity-disabled);
+}
+
+.color-glyph {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 0;
+}
+.color-glyph-bar {
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+}
+.swatch {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1px solid var(--pui-color-border-base);
+  font-family: "KoPub Batang", "Noto Serif KR", serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.swatch-text.swatch-none {
+  color: var(--pui-color-ink-primary);
+}
+.swatch-highlight.swatch-none {
+  background: linear-gradient(to top right, transparent calc(50% - 0.75px), var(--pui-color-ink-tertiary) calc(50% - 0.75px), var(--pui-color-ink-tertiary) calc(50% + 0.75px), transparent calc(50% + 0.75px));
+}
+.swatch-selected {
+  border: 2px solid var(--pui-color-ink-primary);
 }
