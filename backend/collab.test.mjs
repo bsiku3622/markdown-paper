@@ -96,3 +96,60 @@ test('live notes: shared editing, read-only viewers, removal, and JSON snapshots
     await new Promise(resolve => app.close(resolve));
   }
 });
+test('rejected upgrades, logout, and the shared-state size cap', async () => {
+  const net = await import('node:net');
+  const dir = mkdtempSync(join(process.env.TEST_TMPDIR || tmpdir(), 'paperdown-collab-'));
+  const app = createApi({ dataDir: dir, origins: [origin], secure: false, publicUrl: 'http://localhost', noteLimit: 4000 });
+  await new Promise(resolve => app.listen(0, '127.0.0.1', resolve));
+  const port = app.address().port, url = `http://127.0.0.1:${port}`;
+  const providers = [];
+  async function call(path, { method = 'GET', data, cookie } = {}) {
+    const r = await fetch(url + path, { method, headers: { Origin: origin, ...(cookie ? { Cookie: cookie } : {}), ...(data ? { 'Content-Type': 'application/json' } : {}) }, body: data ? JSON.stringify(data) : undefined });
+    return { status: r.status, cookie: r.headers.get('set-cookie')?.split(';')[0], data: await r.json() };
+  }
+  function connect(name, cookie) {
+    const document = new Y.Doc(), events = { synced: false, closed: 0 };
+    const WebSocketPolyfill = class extends WebSocket { constructor(target) { super(target, { headers: { cookie, origin } }); } };
+    const provider = new HocuspocusProvider({ url: `${url.replace('http', 'ws')}/collab`, name, document, WebSocketPolyfill,
+      onSynced: () => { events.synced = true; }, onClose: () => { events.closed++; } });
+    providers.push(provider);
+    return { document, provider, events };
+  }
+  try {
+    // A client that resets the connection after a rejected upgrade must not crash the server.
+    for (const path of ['/collab', '/other']) await new Promise(resolve => {
+      const socket = net.connect(port, '127.0.0.1', () => {
+        socket.write(`GET ${path} HTTP/1.1\r\nHost: x\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nOrigin: http://evil.test\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n`);
+        socket.resetAndDestroy(); setTimeout(resolve, 100);
+      });
+      socket.on('error', () => {});
+    });
+    assert.equal((await call('/health')).status, 200);
+
+    const owner = (await call('/auth/register', { method: 'POST', data: { username: 'owner', password: 'long password owner' } })).cookie;
+    const id = (await call('/notes', { method: 'POST', cookie: owner, data: { document: { version: 1, title: '작은 노트', markdown: '짧은 글', settings: {}, updatedAt: 1 } } })).data.note.id;
+    const a = connect(id, owner);
+    await until(() => a.events.synced);
+    // Past the cap, further writes are refused; what was already stored stays.
+    const big = new Y.XmlElement('paragraph'); const text = new Y.XmlText(); text.insert(0, '가'.repeat(3000)); big.insert(0, [text]);
+    a.document.getXmlFragment('default').push([big]);
+    await new Promise(r => setTimeout(r, 300));
+    const more = new Y.XmlElement('paragraph'); const extra = new Y.XmlText(); extra.insert(0, '넘친 문장'); more.insert(0, [extra]);
+    a.document.getXmlFragment('default').push([more]);
+    await until(() => a.events.closed > 0);
+    a.provider.destroy();
+    await until(async () => (await call(`/notes/${id}`, { cookie: owner })).data.note.document.markdown.includes('가가가'), 8000);
+    assert.ok(!(await call(`/notes/${id}`, { cookie: owner })).data.note.document.markdown.includes('넘친 문장'));
+
+    // Logging out closes that session's live connection; reconnecting is refused.
+    const id2 = (await call('/notes', { method: 'POST', cookie: owner, data: { document: { version: 1, title: '두 번째', markdown: '본문', settings: {}, updatedAt: 1 } } })).data.note.id;
+    const b = connect(id2, owner);
+    let denied = false; b.provider.on('authenticationFailed', () => { denied = true; });
+    await until(() => b.events.synced);
+    assert.equal((await call('/auth/logout', { method: 'POST', cookie: owner, data: {} })).status, 200);
+    await until(() => denied, 8000);
+  } finally {
+    for (const provider of providers) provider.destroy();
+    await new Promise(resolve => app.close(resolve));
+  }
+});

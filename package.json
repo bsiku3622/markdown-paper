@@ -36,6 +36,7 @@
     "crossws": "^0.4.17",
     "html-to-image": "^1.11.13",
     "katex": "^0.18.10",
+    "lib0": "^0.2.120",
     "pretendard": "^1.3.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

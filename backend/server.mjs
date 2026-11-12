@@ -48,7 +48,7 @@ function imageMime(data) {
   if (data.subarray(0,4).toString() === 'RIFF' && data.subarray(8,12).toString() === 'WEBP') return 'image/webp';
   fail(415, 'PNG, JPEG, GIF, WebP 이미지만 올려주세요.');
 }
-export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], secure = true, publicUrl = 'https://paperdown-api.bsiku.dev', trustProxy = false, googleClientId = '', googleKeySource = googleKeys() } = {}) {
+export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], secure = true, publicUrl = 'https://paperdown-api.bsiku.dev', trustProxy = false, googleClientId = '', googleKeySource = googleKeys(), noteLimit } = {}) {
   mkdirSync(join(dataDir, 'files'), { recursive: true, mode: 0o700 });
   mkdirSync(join(dataDir, 'avatars'), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(join(dataDir, 'paperdown.sqlite'));
@@ -69,6 +69,7 @@ export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], 
   addColumn('users', 'avatar_url', 'TEXT');
   addColumn('users', 'google_sub', 'TEXT');
   addColumn('notes', 'ydoc', 'BLOB');
+  addColumn('notes', 'legacy', 'TEXT');
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS users_google ON users(google_sub) WHERE google_sub IS NOT NULL;
     CREATE TABLE IF NOT EXISTS note_members(note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, role TEXT NOT NULL CHECK(role IN ('editor','viewer')), added INTEGER NOT NULL, PRIMARY KEY(note_id,user_id));
     CREATE INDEX IF NOT EXISTS note_members_user ON note_members(user_id);
@@ -91,7 +92,7 @@ export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], 
   }
   function sessionUser(cookieHeader) {
     const token = tokenFromCookie(cookieHeader);
-    return token ? db.prepare('SELECT users.* FROM sessions JOIN users ON users.id=sessions.user_id WHERE token=? AND expires>?').get(hash(token), Date.now()) : undefined;
+    return token ? db.prepare('SELECT users.*,sessions.token AS session FROM sessions JOIN users ON users.id=sessions.user_id WHERE token=? AND expires>?').get(hash(token), Date.now()) : undefined;
   }
   function auth(req) {
     const user = sessionUser(req.headers.cookie);
@@ -123,7 +124,7 @@ export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], 
   function members(noteId) {
     return db.prepare('SELECT users.*,m.role FROM note_members m JOIN users ON users.id=m.user_id WHERE m.note_id=? ORDER BY m.added').all(noteId).map(u => ({ ...publicView(u), role: u.role }));
   }
-  const collab = createCollab({ db, userFromCookie: sessionUser, roleFor, stored: linkFiles });
+  const collab = createCollab({ db, userFromCookie: sessionUser, roleFor, stored: linkFiles, noteLimit });
   const server = createServer(async (req,res) => {
     res.setHeader('Cache-Control','private, no-store');
     res.setHeader('X-Content-Type-Options','nosniff');
@@ -211,7 +212,7 @@ export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], 
         return send(200,{user:userView(user)});
       }
       if (path === '/auth/logout' && method === 'POST') {
-        const token = tokenFromCookie(req.headers.cookie); if (token) db.prepare('DELETE FROM sessions WHERE token=?').run(hash(token));
+        const token = tokenFromCookie(req.headers.cookie); if (token) { db.prepare('DELETE FROM sessions WHERE token=?').run(hash(token)); collab.endSession(hash(token)); }
         res.setHeader('Set-Cookie',cookie('',0)); return send(200,{ok:true});
       }
       const user = auth(req);
@@ -362,13 +363,16 @@ export function createApi({ dataDir, origins = ['https://paperdown.bsiku.dev'], 
   });
   // Live editing shares the API origin; the cookie session and frontend origin are checked here.
   server.on('upgrade', (req, socket, head) => {
+    // Node drops its own socket error handler on upgrade; without one a reset connection crashes the process.
+    socket.on('error', () => socket.destroy());
     try {
       if (new URL(req.url, 'http://localhost').pathname !== '/collab') fail(404,'not found');
       if (!origins.includes(req.headers.origin)) fail(403,'forbidden');
       limit(req,'collab',120,60_000);
       collab.handleUpgrade(req, socket, head).catch(() => socket.destroy());
     } catch(e) {
-      socket.end(`HTTP/1.1 ${e instanceof Failure ? e.status : 400} Rejected\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+      if (socket.writable) socket.end(`HTTP/1.1 ${e instanceof Failure ? e.status : 400} Rejected\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+      else socket.destroy();
     }
   });
   server.requestTimeout = 30_000;

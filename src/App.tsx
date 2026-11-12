@@ -451,7 +451,10 @@ function Workspace({ initial, account, live, session }: { initial: DocumentData;
         return {
           ...d,
           title: typeof title === "string" ? title : d.title,
-          settings: { ...normalize({ settings: { ...d.settings, ...shared.toJSON() } }).settings, zoom: d.settings.zoom },
+          settings: {
+            ...normalize({ settings: { ...d.settings, ...Object.fromEntries(SHARED_SETTINGS.map((key) => [key, shared.get(key) ?? d.settings[key]])) } }).settings,
+            zoom: d.settings.zoom,
+          },
         };
       });
     meta.observe(pull);
