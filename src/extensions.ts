@@ -72,8 +72,37 @@ export function documentExtensions(options: DocumentExtensionOptions = {}): AnyE
         if (!factory) return null;
         return (props) => {
           const view = factory(props) as unknown as {
+            dom: HTMLElement;
             element: HTMLElement;
+            isResizing?: boolean;
             handleResize?: (dx: number, dy: number) => void;
+            handleMouseUp?: () => void;
+            handleTouchMove?: (event: TouchEvent) => void;
+            destroy?: () => void;
+          };
+          // Tiptap commits a resize only on mouseup and never removes its touchmove listener,
+          // so a finger drag would change the image on screen without saving it. Finish
+          // touch drags through the same commit path.
+          const stopListening = () => {
+            document.removeEventListener("touchend", finishTouch);
+            document.removeEventListener("touchcancel", finishTouch);
+            if (view.handleTouchMove) document.removeEventListener("touchmove", view.handleTouchMove);
+          };
+          function finishTouch() {
+            stopListening();
+            if (view.isResizing) view.handleMouseUp?.();
+          }
+          const startTouch = (event: TouchEvent) => {
+            if (!(event.target as HTMLElement | null)?.closest?.("[data-resize-handle]")) return;
+            document.addEventListener("touchend", finishTouch);
+            document.addEventListener("touchcancel", finishTouch);
+          };
+          view.dom?.addEventListener("touchstart", startTouch, { capture: true });
+          const destroy = view.destroy?.bind(view);
+          view.destroy = () => {
+            view.dom?.removeEventListener("touchstart", startTouch, { capture: true });
+            stopListening();
+            destroy?.();
           };
           // The page stack uses CSS zoom: pointer deltas are screen pixels,
           // while the stored width is in unzoomed document pixels.

@@ -308,6 +308,17 @@
   opacity: 0;
   z-index: 2;
 }
+/* A drag that starts on a handle resizes the image instead of scrolling the page. */
+.document-content [data-resize-handle] {
+  touch-action: none;
+}
+@media (pointer: coarse) {
+  .document-content [data-resize-handle] {
+    width: 22px;
+    height: 22px;
+    margin: -11px;
+  }
+}
 .document-content [data-resize-handle="top-left"],
 .document-content [data-resize-handle="bottom-right"] {
   cursor: nwse-resize;
